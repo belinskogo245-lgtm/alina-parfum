@@ -1,1 +1,154 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Алина Парфюм — тестовый кабинет</title><style>:root{font-family:system-ui,-apple-system,sans-serif;color:#4b3640;background:#fff8f8}*{box-sizing:border-box}body{margin:0}header{padding:26px 18px;text-align:center;background:linear-gradient(120deg,#f4dfe6,#fff1e7)}h1{font:38px Georgia;margin:0}header p{margin:9px}main{max-width:900px;margin:auto;padding:16px}.tabs,.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}button{border:0;border-radius:12px;padding:11px 14px;background:#8c526b;color:white;font:inherit;cursor:pointer}button.alt{background:#eddce3;color:#573b49}button:disabled{opacity:.45;cursor:not-allowed}.card{border:1px solid #eedee3;background:white;border-radius:17px;padding:17px;margin:13px 0}.hidden{display:none}.line{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #f2e7eb}.line:last-child{border:0}.muted{color:#7c6c73;font-size:14px}input{border:1px solid #dccbd1;padding:9px;border-radius:8px;font:inherit;width:100px}.status{background:#fff1d9;padding:10px;border-radius:10px}small{font-size:12px}h2{margin-top:0}#toast{position:sticky;bottom:8px;background:#49343e;color:white;padding:10px;border-radius:12px;display:none}</style></head><body><header><h1>Алина Парфюм</h1><p>Тестовый кабинет · заказы и оплаты демонстрационные</p></header><main><nav class="tabs"><button onclick="tab('shop')">Магазин</button><button onclick="tab('partner')">Кабинет Алины</button><button onclick="tab('owner')">Поставщик</button></nav><section id="shop"><div class="card"><h2>Каталог — демонстрация</h2><p class="muted">Пока три условных товара, не синхронизированы с действующим мини-аппом. Покупательские цены здесь не рассчитываются: нельзя выдавать тестовую закупочную цену за розничную.</p><div id="products"></div></div><div class="card"><h2>Корзина покупателя</h2><div id="cart"></div><div class="actions"><button onclick="newOrder()">Оформить тестовый заказ</button><button class="alt" onclick="cart=[];render()">Очистить</button></div></div></section><section id="partner" class="hidden"><div class="card"><h2>Заказы покупателей</h2><p class="muted">Подтверди оплату только в рамках теста. Реальных платежей нет.</p><div id="orders"></div></div><div class="card"><h2>Закупочная корзина Алины</h2><p>Обычная закупка — от <b>120 $</b>. Добирать товары Алина решает самостоятельно.</p><div id="procProducts"></div><div id="procCart"></div><div class="actions"><button onclick="sendProc()">Отправить закупку от 120 $</button><button class="alt" onclick="singleRequest()">Запросить один флакон (+5 $)</button><button class="alt" onclick="proc=[];render()">Очистить закупку</button></div></div><div class="card"><h2>Мои закупки</h2><div id="partnerRequests"></div></div></section><section id="owner" class="hidden"><div class="card"><h2>Оплаченные покупателями заказы</h2><div id="paidOrders"></div></div><div class="card"><h2>Закупки и исключения</h2><div id="ownerRequests"></div></div></section><div class="card"><label>Курс доллара: <input type="number" id="rate" value="88" min="1" step="0.1" onchange="render()"> ₽</label><p class="muted">Курс меняет рублёвое отображение; минимальная закупка остаётся 120 $. Тестовые данные хранятся только в открытой вкладке. Домашние остатки не учитываются.</p><button class="alt" onclick="resetTest()">Сбросить тест</button></div><div id="toast"></div></main><script>const items=[{name:'Демонстрационный аромат 25 мл',usd:4},{name:'Демонстрационный аромат 35 мл',usd:4.3},{name:'Демонстрационный аромат 30 мл',usd:4.5}];let cart=[],proc=[],orders=[],requests=[];const el=id=>document.getElementById(id),rate=()=>Math.max(1,Number(el('rate').value)||88),rub=v=>Math.ceil(v*rate()/10)*10,fmt=v=>v.toLocaleString('ru-RU',{maximumFractionDigits:2}),sum=a=>a.reduce((s,i)=>s+items[i].usd,0),escapeText=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;');function toast(s){el('toast').textContent=s;el('toast').style.display='block';setTimeout(()=>el('toast').style.display='none',2800)}function tab(t){for(const id of ['shop','partner','owner'])el(id).classList.toggle('hidden',id!==t);render()}function add(i){cart.push(i);render()}function buy(i){proc.push(i);render()}function newOrder(){if(!cart.length)return toast('Сначала добавь товар');orders.push({items:[...cart],paid:false});cart=[];render();toast('Тестовый заказ создан')}function paid(i){orders[i].paid=true;render()}function sendProc(){const s=sum(proc);if(s<120-0.0001)return toast('Нужно добрать ещё '+fmt(120-s)+' $');requests.push({kind:'Обычная закупка',usd:s,status:'Ждём оплату Алины'});proc=[];render();toast('Закупка отправлена')}function singleRequest(){if(proc.length!==1)return toast('Для исключения положи в закупку ровно один флакон');requests.push({kind:'Один флакон +5 $',usd:sum(proc)+5,status:'Нужно одобрение поставщика'});proc=[];render();toast('Запрос отправлен на одобрение')}function approve(i){requests[i].status='Ждём оплату Алины';render()}function reject(i){requests[i].status='Отклонено';render()}function partnerPay(i){requests[i].status='Алина сообщила об оплате';render()}function ownerConfirm(i){requests[i].status='Оплата подтверждена поставщиком';render()}function resetTest(){if(confirm('Очистить все демонстрационные заказы?')){cart=[];proc=[];orders=[];requests=[];render()}}function render(){el('products').innerHTML=items.map((p,i)=>'<div class="line"><span>'+escapeText(p.name)+'</span><button onclick="add('+i+')">Добавить</button></div>').join('');el('cart').innerHTML=cart.length?'<p>'+cart.map(i=>escapeText(items[i].name)).join(', ')+'</p><p class="muted">Розничный расчёт подключим после сверки правил оригинального каталога.</p>':'<p class="muted">Корзина пуста</p>';el('orders').innerHTML=orders.length?orders.map((o,i)=>'<div class="line"><span>Заказ №'+(i+1)+' · '+o.items.length+' шт. · '+(o.paid?'Оплачен':'Не оплачен')+'</span>'+(o.paid?'':'<button onclick="paid('+i+')">Оплата получена</button>')+'</div>').join(''):'<p class="muted">Заказов пока нет</p>';el('procProducts').innerHTML=items.map((p,i)=>'<div class="line"><span>'+escapeText(p.name)+' · '+fmt(p.usd)+' $</span><button onclick="buy('+i+')">Добавить</button></div>').join('');el('procCart').innerHTML='<p><b>В закупке:</b> '+proc.length+' шт. · '+fmt(sum(proc))+' $ · '+fmt(rub(sum(proc)))+' ₽</p><p class="muted">До порога: '+fmt(Math.max(0,120-sum(proc)))+' $</p>';el('paidOrders').innerHTML=orders.some(o=>o.paid)?orders.map((o,i)=>o.paid?'<p>Заказ №'+(i+1)+' · '+o.items.length+' шт. · покупатель оплатил Алине</p>':'').join(''):'<p class="muted">Оплаченных заказов нет</p>';el('partnerRequests').innerHTML=requests.length?requests.map((r,i)=>'<div class="line"><span>№'+(i+1)+' · '+r.kind+' · '+fmt(r.usd)+' $ · '+r.status+'</span>'+(r.status==='Ждём оплату Алины'?'<button onclick="partnerPay('+i+')">Я оплатила</button>':'')+'</div>').join(''):'<p class="muted">Нет закупок</p>';el('ownerRequests').innerHTML=requests.length?requests.map((r,i)=>'<div class="card"><p>№'+(i+1)+' · '+r.kind+' · '+fmt(r.usd)+' $ ('+fmt(rub(r.usd))+' ₽)</p><p class="status">'+r.status+'</p><div class="actions">'+(r.status==='Нужно одобрение поставщика'?'<button onclick="approve('+i+')">Одобрить</button><button class="alt" onclick="reject('+i+')">Отклонить</button>':'')+(r.status==='Алина сообщила об оплате'?'<button onclick="ownerConfirm('+i+')">Деньги получены</button>':'')+'</div></div>').join(''):'<p class="muted">Закупок нет</p>'}render();</script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Алина Парфюм — тестовый кабинет</title>
+<style>
+:root{--rose:#8c526b;--rose2:#eddce3;--ink:#4b3640;--cream:#fff8f8;font-family:system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--cream)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;padding-bottom:90px}
+header{padding:26px 18px;text-align:center;background:linear-gradient(120deg,#f4dfe6,#fff1e7)}
+h1{font:36px Georgia,serif;margin:0}header p{margin:9px 0 0}
+main{max-width:900px;margin:auto;padding:12px 14px}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;padding:10px 0;background:var(--cream)}
+.tabs button{flex:1;padding:12px 6px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+button{border:0;border-radius:12px;padding:11px 14px;background:var(--rose);color:#fff;font:inherit;cursor:pointer;touch-action:manipulation;transition:transform .08s}
+button:active{transform:scale(.96)}
+button.alt,.tabs button{background:var(--rose2);color:#573b49}
+.tabs button[aria-selected="true"]{background:var(--rose);color:#fff}
+.card{border:1px solid #eedee3;background:#fff;border-radius:17px;padding:16px;margin:12px 0}
+.hidden{display:none!important}
+.line{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f2e7eb}
+.line:last-child{border:0}
+.qty{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.qty button{padding:8px 13px}
+.muted{color:#7c6c73;font-size:14px}
+input{border:1px solid #dccbd1;padding:9px;border-radius:8px;font:inherit;width:100px}
+.status{background:#fff1d9;padding:8px 10px;border-radius:10px;display:inline-block}
+.badge{background:var(--rose);color:#fff;border-radius:10px;padding:1px 7px;font-size:12px;margin-left:4px}
+h2{margin:0 0 8px;font-size:20px}
+#toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:92%;background:#49343e;color:#fff;padding:12px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+#toast.show{opacity:1}
+#err{display:none;background:#ffe3e3;color:#7a1f1f;padding:10px;border-radius:10px;margin:10px 0;font-size:13px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header><h1>Алина Парфюм</h1><p>Тестовый кабинет · заказы и оплаты демонстрационные</p></header>
+<main>
+<div id="err"></div>
+<nav class="tabs" role="tablist">
+  <button data-act="tab" data-arg="shop" role="tab">Магазин <span class="badge" id="cartBadge">0</span></button>
+  <button data-act="tab" data-arg="partner" role="tab">Алина</button>
+  <button data-act="tab" data-arg="owner" role="tab">Поставщик</button>
+</nav>
+
+<section id="shop">
+  <div class="card"><h2>Каталог — демонстрация</h2>
+    <p class="muted">Три условных товара, не связаны с действующим мини-аппом. Розничные цены пока не показываются — правила наценки ещё согласуются.</p>
+    <div id="products"></div></div>
+  <div class="card"><h2>Корзина покупателя</h2><div id="cart"></div>
+    <div class="actions"><button data-act="newOrder">Оформить тестовый заказ</button><button class="alt" data-act="clearCart">Очистить</button></div></div>
+</section>
+
+<section id="partner" class="hidden">
+  <div class="card"><h2>Заказы покупателей</h2><p class="muted">Отметка оплаты — только тест, реальных платежей нет. Поставщик видит заказ только после отметки.</p><div id="orders"></div></div>
+  <div class="card"><h2>Закупка у поставщика</h2><p>Обычная закупка — от <b>120 $</b>. Что добирать, Алина решает сама.</p>
+    <div id="procProducts"></div><div id="procCart"></div>
+    <div class="actions"><button data-act="sendProc">Отправить закупку от 120 $</button><button class="alt" data-act="singleRequest">Один флакон (+5 $, нужно одобрение)</button><button class="alt" data-act="clearProc">Очистить</button></div></div>
+  <div class="card"><h2>Мои закупки</h2><div id="partnerRequests"></div></div>
+</section>
+
+<section id="owner" class="hidden">
+  <div class="card"><h2>Оплаченные покупателями заказы</h2><div id="paidOrders"></div></div>
+  <div class="card"><h2>Закупки и исключения</h2><div id="ownerRequests"></div></div>
+</section>
+
+<div class="card"><label>Курс доллара: <input type="number" id="rate" value="88" min="1" step="0.1" inputmode="decimal"> ₽</label>
+  <p class="muted">Минимальная закупка всегда 120 $; рубли пересчитываются по курсу. Тестовые данные живут только в этой вкладке.</p>
+  <button class="alt" data-act="reset" id="resetBtn">Сбросить тест</button></div>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var errBox=document.getElementById('err');
+function showErr(msg){errBox.style.display='block';errBox.textContent='Ошибка скрипта: '+msg;}
+window.addEventListener('error',function(e){showErr(e.message+' (строка '+e.lineno+')');});
+
+var items=[{name:'Демонстрационный аромат 25 мл',usd:4},{name:'Демонстрационный аромат 35 мл',usd:4.3},{name:'Демонстрационный аромат 30 мл',usd:4.5}];
+var MIN_USD=120;
+var STATUS=['Сформирована','Ожидает оплаты Алины','Алина сообщила об оплате','Поставщик подтвердил оплату','Передана в сборку','Собрана','Отправлена / передана','Завершена'];
+var S={tab:'shop',cart:{},proc:{},orders:[],requests:[]};
+var resetArmed=false,toastTimer=null;
+
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function rate(){var r=parseFloat(String($('rate').value).replace(',','.'));return r>0?r:88;}
+function rub(usd){return Math.ceil(usd*rate()/10)*10;}
+function fmt(v){return Number(v).toLocaleString('ru-RU',{maximumFractionDigits:2});}
+function count(m){var n=0;for(var k in m)n+=m[k];return n;}
+function usdSum(m){var s=0;for(var k in m)s+=items[k].usd*m[k];return Math.round(s*100)/100;}
+function inc(m,i,d){m[i]=(m[i]||0)+d;if(m[i]<=0)delete m[i];}
+function toast(s){var t=$('toast');t.textContent=s;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},2500);}
+function qtyRow(name,i,m,act,extra){var q=m[i]||0;
+  return '<div class="line"><span>'+esc(name)+(extra||'')+'</span><span class="qty">'+
+  (q?'<button class="alt" data-act="'+act+'" data-arg="'+i+'" data-d="-1" aria-label="Убрать">−</button><b>'+q+'</b>':'')+
+  '<button data-act="'+act+'" data-arg="'+i+'" data-d="1">'+(q?'+':'Добавить')+'</button></span></div>';}
+function listItems(m){var a=[];for(var k in m)a.push(esc(items[k].name)+' × '+m[k]);return a.join('<br>');}
+
+var A={
+  tab:function(t){S.tab=t;},
+  cart:function(i,d){inc(S.cart,i,d);if(d>0)toast('Добавлено в корзину');},
+  clearCart:function(){S.cart={};toast('Корзина очищена');},
+  newOrder:function(){if(!count(S.cart))return toast('Сначала добавьте товар');S.orders.push({items:S.cart,paid:false});S.cart={};toast('Тестовый заказ №'+S.orders.length+' создан');},
+  paid:function(i){S.orders[i].paid=true;toast('Заказ №'+(+i+1)+' отмечен оплаченным — теперь его видит поставщик');},
+  proc:function(i,d){inc(S.proc,i,d);},
+  clearProc:function(){S.proc={};},
+  sendProc:function(){var s=usdSum(S.proc);if(s<MIN_USD)return toast('Нужно добрать ещё '+fmt(MIN_USD-s)+' $');
+    S.requests.push({kind:'Обычная закупка',items:S.proc,usd:s,st:1});S.proc={};toast('Закупка сформирована, ожидает оплаты');},
+  singleRequest:function(){if(count(S.proc)!==1)return toast('Для исключения в закупке должен быть ровно один флакон');
+    S.requests.push({kind:'Один флакон +5 $',items:S.proc,usd:usdSum(S.proc)+5,st:0,needApprove:true});S.proc={};toast('Запрос отправлен поставщику на одобрение');},
+  approve:function(i){var r=S.requests[i];r.needApprove=false;r.st=1;toast('Исключение одобрено');},
+  reject:function(i){var r=S.requests[i];r.needApprove=false;r.rejected=true;toast('Исключение отклонено');},
+  partnerPay:function(i){S.requests[i].st=2;toast('Отмечено: Алина сообщила об оплате');},
+  advance:function(i){var r=S.requests[i];if(r.st<STATUS.length-1)r.st++;toast('Статус: '+STATUS[r.st]);},
+  reset:function(){if(!resetArmed){resetArmed=true;$('resetBtn').textContent='Нажмите ещё раз для сброса';setTimeout(function(){resetArmed=false;$('resetBtn').textContent='Сбросить тест';},3000);return;}
+    resetArmed=false;$('resetBtn').textContent='Сбросить тест';S.cart={};S.proc={};S.orders=[];S.requests=[];toast('Тест сброшен');}
+};
+
+function statusOf(r){return r.rejected?'Отклонено':r.needApprove?'Ждёт одобрения поставщика':STATUS[r.st];}
+
+function render(){
+  ['shop','partner','owner'].forEach(function(id){$(id).classList.toggle('hidden',id!==S.tab);});
+  [].forEach.call(document.querySelectorAll('.tabs button'),function(b){b.setAttribute('aria-selected',b.getAttribute('data-arg')===S.tab?'true':'false');});
+  $('cartBadge').textContent=count(S.cart);
+  $('products').innerHTML=items.map(function(p,i){return qtyRow(p.name,i,S.cart,'cart');}).join('');
+  $('cart').innerHTML=count(S.cart)?'<p>'+listItems(S.cart)+'</p><p class="muted">Розничный расчёт появится после утверждения правил наценки.</p>':'<p class="muted">Корзина пуста</p>';
+  $('orders').innerHTML=S.orders.length?S.orders.map(function(o,i){return '<div class="line"><span>Заказ №'+(i+1)+' · '+count(o.items)+' шт. · '+(o.paid?'Оплачен':'Не оплачен')+'</span>'+(o.paid?'':'<button data-act="paid" data-arg="'+i+'">Оплата получена</button>')+'</div>';}).join(''):'<p class="muted">Заказов пока нет</p>';
+  $('procProducts').innerHTML=items.map(function(p,i){return qtyRow(p.name,i,S.proc,'proc',' · '+fmt(p.usd)+' $');}).join('');
+  var s=usdSum(S.proc);
+  $('procCart').innerHTML='<p><b>В закупке:</b> '+count(S.proc)+' шт. · '+fmt(s)+' $ · '+fmt(rub(s))+' ₽</p><p class="muted">Минимум 120 $ = '+fmt(rub(MIN_USD))+' ₽ по текущему курсу. До порога: '+fmt(Math.max(0,MIN_USD-s))+' $</p>';
+  var paid=S.orders.filter(function(o){return o.paid;});
+  $('paidOrders').innerHTML=paid.length?S.orders.map(function(o,i){return o.paid?'<div class="line"><span>Заказ №'+(i+1)+' · '+count(o.items)+' шт.</span><span class="muted">оплачен Алине</span></div>':'';}).join(''):'<p class="muted">Оплаченных заказов нет</p>';
+  $('partnerRequests').innerHTML=S.requests.length?S.requests.map(function(r,i){return '<div class="line"><span>№'+(i+1)+' · '+r.kind+' · '+fmt(r.usd)+' $ · '+fmt(rub(r.usd))+' ₽<br><span class="status">'+statusOf(r)+'</span></span>'+(!r.rejected&&!r.needApprove&&r.st===1?'<button data-act="partnerPay" data-arg="'+i+'">Я оплатила</button>':'')+'</div>';}).join(''):'<p class="muted">Закупок нет</p>';
+  $('ownerRequests').innerHTML=S.requests.length?S.requests.map(function(r,i){var b='';
+    if(r.needApprove)b='<button data-act="approve" data-arg="'+i+'">Одобрить</button><button class="alt" data-act="reject" data-arg="'+i+'">Отклонить</button>';
+    else if(!r.rejected&&r.st===2)b='<button data-act="advance" data-arg="'+i+'">Деньги получены</button>';
+    else if(!r.rejected&&r.st>=3&&r.st<STATUS.length-1)b='<button data-act="advance" data-arg="'+i+'">Далее: '+STATUS[r.st+1]+'</button>';
+    return '<div class="card"><p>№'+(i+1)+' · '+r.kind+' · '+fmt(r.usd)+' $ ('+fmt(rub(r.usd))+' ₽)</p><p class="muted">'+listItems(r.items)+'</p><span class="status">'+statusOf(r)+'</span><div class="actions">'+b+'</div></div>';}).join(''):'<p class="muted">Закупок нет</p>';
+}
+
+document.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('[data-act]'):null;if(!b)return;
+  var fn=A[b.getAttribute('data-act')];if(!fn)return;
+  try{fn(b.getAttribute('data-arg'),Number(b.getAttribute('data-d')||0));render();}catch(err){showErr(err.message);}
+});
+$('rate').addEventListener('input',render);
+try{render();}catch(err){showErr(err.message);}
+})();
+</script>
+</body>
+</html>
