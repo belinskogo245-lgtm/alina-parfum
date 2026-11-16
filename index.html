@@ -267,7 +267,7 @@ function loadCatalog(){
   }).catch(function(){$('grid').innerHTML='<div class="empty" style="grid-column:1/-1">Каталог временно недоступен. Обновите страницу через минуту.</div>';});
 }
 function hero(){
-  var pool=D.items.filter(function(x){return x.s&&x.i.length&&/Селектив|Люкс|Парфюм 100/.test(x.c);});
+  var pool=D.items.filter(function(x){return x.s&&x.i.length&&/Селектив|А+Д|Парфюм 100/.test(x.c);});
   if(pool.length<3)pool=D.items.filter(function(x){return x.s&&x.i.length;});
   var pick=[];for(var k=0;k<5&&pool.length;k++)pick.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
   var box=$('heroArt');box.innerHTML=pick.map(function(x,i){return '<img src="'+esc(x.i[0])+'" alt="" referrerpolicy="no-referrer" style="position:absolute;inset:0"'+(i===0?' class="on"':'')+'>';}).join('');
