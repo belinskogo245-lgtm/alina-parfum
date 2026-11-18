@@ -188,7 +188,7 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
 <main class="wrap" id="catalog">
   <h2 class="sec-title">Каталог</h2>
   <p class="sec-sub">Только то, что есть у поставщика. Наличие обновляется каждый час.</p>
-  <div class="chips" id="chips"></div>
+  <div class="chips" id="priceMode"></div><div class="chips" id="chips"></div>
   <div class="tools">
     <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="Название или бренд" autocomplete="off" enterkeyhint="search"></label>
@@ -226,16 +226,16 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
 (function(){
 'use strict';
 /* ===== Цены: прогрессивная наценка (зеркало scripts/pricing.mjs) ===== */
-var BANDS=[[50000,1.30],[100000,1.20],[150000,1.15],[Infinity,1.10]];
+var WHOLESALE_MIN=12000, RETAIL_DISCOUNT_AT=5000;
 function ceil10(x){return Math.ceil(Math.round(x*100)/100/10)*10;}
-function retailFromCost(c){var r=0,prev=0,left=c;for(var i=0;i<BANDS.length&&left>0;i++){var t=BANDS[i][0],k=BANDS[i][1],bc=(t-prev)/k,x=Math.min(left,bc);r+=x*k;left-=x;prev=t;}return r;}
+function unitPrice(x){return S.mode==='wholesale'?(x.w||x.p):x.p;}
 /* сумма по ценам витрины → итог с плавной скидкой за объём */
-function totals(sub){var total=Math.min(sub,ceil10(retailFromCost(sub/BANDS[0][1])));return {sub:sub,total:total,disc:sub-total};}
+function totals(sub){var disc=S.mode==='retail'&&sub>=RETAIL_DISCOUNT_AT?Math.round(sub*.03):0;return {sub:sub,total:sub-disc,disc:disc};}
 
 var TEST_MODE=true; // заказы не отправляются, пока владелец не разрешит приём
 var PAGE=24;
 var D={items:[],byId:{},cats:[],vols:[]};
-var S={cat:'',q:'',vol:'',stock:true,sort:'',shown:PAGE,cart:load('ap_cart',{}),orders:load('ap_orders',[])};
+var S={cat:'',q:'',vol:'',stock:true,mode:load('ap_mode','retail'),sort:'',shown:PAGE,cart:load('ap_cart',{}),orders:load('ap_orders',[])};
 
 function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
@@ -290,9 +290,9 @@ function cardHtml(x){
   return '<article class="card"><div class="ph" data-act="open" data-id="'+esc(x.id)+'">'+img(x.i[0],x.n)+
     (!x.s?'<span class="tag out">Нет в наличии</span>':x.new?'<span class="tag new">Новинка</span>':'')+'</div>'+
     '<div class="body"><div class="cat">'+esc(x.c)+'</div><div class="nm" data-act="open" data-id="'+esc(x.id)+'">'+esc(x.n)+'</div>'+
-    (x.v?'<div class="vol">'+esc(x.v)+'</div>':'')+'<div class="row"><span class="price">'+rub(x.p)+'</span>'+ctl+'</div></div></article>';
+    (x.v?'<div class="vol">'+esc(x.v)+'</div>':'')+'<div class="row"><span class="price">'+rub(unitPrice(x))+'</span>'+ctl+'</div></div></article>';
 }
-function render(){
+function render(){var pm=$('priceMode');if(pm)pm.innerHTML='<button class="chip'+(S.mode==='retail'?' on':'')+'" data-act="mode" data-v="retail">Розница</button><button class="chip'+(S.mode==='wholesale'?' on':'')+'" data-act="mode" data-v="wholesale">Опт от 12 000 ₽</button>';
   $('chips').innerHTML='<button class="chip'+(S.cat?'':' on')+'" data-act="cat" data-v="">Все</button>'+D.cats.map(function(c){return '<button class="chip'+(S.cat===c?' on':'')+'" data-act="cat" data-v="'+esc(c)+'">'+esc(c)+'</button>';}).join('');
   $('fStock').classList.toggle('on',S.stock);$('fStock').textContent=(S.stock?'✓ ':'')+'В наличии';
   var a=filtered();
@@ -308,7 +308,7 @@ function refreshCard(id){ // точечно перерисовать карто�
 /* ===== корзина ===== */
 function cartLines(){return Object.keys(S.cart).map(function(id){return {x:D.byId[id],q:S.cart[id]};}).filter(function(l){return l.x;});}
 function cartCount(){return cartLines().reduce(function(s,l){return s+l.q;},0);}
-function cartSub(){return cartLines().reduce(function(s,l){return s+l.x.p*l.q;},0);}
+function cartSub(){return cartLines().reduce(function(s,l){return s+unitPrice(l.x)*l.q;},0);}
 function setQty(id,q){var x=D.byId[id];if(!x)return;if(q>0&&!x.s)return toast('Этого аромата сейчас нет');q=Math.max(0,Math.min(99,q));if(q)S.cart[id]=q;else delete S.cart[id];save('ap_cart',S.cart);refreshCard(id);renderCart();}
 function renderCart(){
   var n=cartCount(),t=totals(cartSub());
@@ -317,7 +317,7 @@ function renderCart(){
   $('barQty').textContent='Корзина · '+n+' '+plural(n,'флакон','флакона','флаконов');$('barSum').textContent=rub(t.total);
   if(sheetOpen==='cart')openCart(true);
 }
-function sumHtml(t){return '<div class="sum"><div><span>Товары</span><span>'+rub(t.sub)+'</span></div>'+(t.disc>0?'<div class="disc"><span>Скидка за объём</span><span>−'+rub(t.disc)+'</span></div>':'')+'<div><span>Доставка</span><span>рассчитает Алина</span></div><div class="tot"><span>Итого</span><span>'+rub(t.total)+'</span></div></div>';}
+function sumHtml(t){return '<div class="sum"><div><span>Товары</span><span>'+rub(t.sub)+'</span></div>'+(t.disc>0?'<div class="disc"><span>Скидка 3% (розница)</span><span>−'+rub(t.disc)+'</span></div>':'')+'<div><span>Доставка</span><span>рассчитает Алина</span></div><div class="tot"><span>Итого</span><span>'+rub(t.total)+'</span></div></div>';}
 
 /* ===== окна ===== */
 var sheetOpen=null,scrollY0=0;
@@ -340,11 +340,11 @@ function openProduct(id){
 function openCart(keep){
   var L=cartLines(),t=totals(cartSub());
   if(!L.length){sheet('cart','Корзина','<div class="empty">Корзина пуста.<br>Добавьте аромат из каталога.</div>','<button class="btn block" data-act="close">В каталог</button>');return;}
-  var body=L.map(function(l){var x=l.x;return '<div class="ln">'+(x.i[0]?img(x.i[0],x.n):'<div class="ni"></div>')+'<div class="t"><b>'+esc(x.n)+'</b><span>'+esc(x.v||x.c)+' · '+rub(x.p)+'</span></div><div class="r"><div class="qmini"><button data-act="dec" data-id="'+esc(x.id)+'">−</button><b>'+l.q+'</b><button data-act="inc" data-id="'+esc(x.id)+'">+</button></div><b style="font-size:14px">'+rub(x.p*l.q)+'</b></div></div>';}).join('')+sumHtml(t)+
-    (t.sub<50000?'<p class="note">От 50 000 ₽ в заказе включается плавная скидка за объём.</p>':'')+'<button class="btn light block" style="margin-top:10px" data-act="clearCart">Очистить корзину</button>';
-  sheet('cart','Корзина',body,'<button class="btn block" data-act="checkout">Оформить заказ · '+rub(t.total)+'</button>');
+  var body=L.map(function(l){var x=l.x;return '<div class="ln">'+(x.i[0]?img(x.i[0],x.n):'<div class="ni"></div>')+'<div class="t"><b>'+esc(x.n)+'</b><span>'+esc(x.v||x.c)+' · '+rub(unitPrice(x))+'</span></div><div class="r"><div class="qmini"><button data-act="dec" data-id="'+esc(x.id)+'">−</button><b>'+l.q+'</b><button data-act="inc" data-id="'+esc(x.id)+'">+</button></div><b style="font-size:14px">'+rub(unitPrice(x)*l.q)+'</b></div></div>';}).join('')+sumHtml(t)+
+    (S.mode==='wholesale'&&t.sub<WHOLESALE_MIN?'<p class="note">Минимальный оптовый заказ — 12 000 ₽.</p>':'')+'<button class="btn light block" style="margin-top:10px" data-act="clearCart">Очистить корзину</button>';
+  sheet('cart','Корзина',body,'<button class="btn block" data-act="checkout"'+(S.mode==='wholesale'&&t.sub<WHOLESALE_MIN?' disabled':'')+'>Оформить заказ · '+rub(t.total)+'</button>');
 }
-function openCheckout(){
+function openCheckout(){if(S.mode==='wholesale'&&cartSub()<WHOLESALE_MIN)return toast('Оптовый заказ от 12 000 ₽');
   var t=totals(cartSub()),c=load('ap_contact',{});
   var body=(TEST_MODE?'<div class="test">Тестовый режим: заказ сохранится только на этом устройстве и никуда не отправится. Приём заказов включим после проверки.</div>':'')+
     '<form id="f" novalidate>'+
@@ -357,15 +357,15 @@ function openCheckout(){
     '</form>'+sumHtml(t)+'<p class="note">Оплата — переводом Алине после подтверждения заказа. Реквизиты пришлём лично.</p>';
   sheet('checkout','Оформление',body,'<button class="btn block" data-act="submit">'+(TEST_MODE?'Оформить (тест)':'Оформить заказ')+' · '+rub(t.total)+'</button>');
 }
-function submitOrder(){
+function submitOrder(){if(S.mode==='wholesale'&&cartSub()<WHOLESALE_MIN)return toast('Оптовый заказ от 12 000 ₽');
   var f=$('f'),v={name:$('fn').value.trim(),phone:$('fp').value.trim(),dl:(f.querySelector('[name=dl]:checked')||{}).value,addr:$('fc').value.trim(),comment:$('fm').value.trim()};
   var ok=true;function chk(k,cond){$('e_'+k).style.display=cond?'none':'block';if(!cond)ok=false;}
   chk('name',v.name.length>=2);chk('phone',/^\D*(\d\D*){10,11}$/.test(v.phone));chk('addr',v.dl==='Самовывоз'||v.addr.length>=5);chk('agree',f.querySelector('[name=agree]').checked);
   if(!ok)return toast('Проверьте поля формы');
   save('ap_contact',{name:v.name,phone:v.phone,dl:v.dl,addr:v.addr});
   var L=cartLines(),t=totals(cartSub()),num='АП-'+Date.now().toString(36).slice(-6).toUpperCase();
-  var txt='Заказ '+num+'\n'+L.map(function(l,i){return (i+1)+'. '+l.x.n+(l.x.v?' ('+l.x.v+')':'')+' × '+l.q+' = '+rub(l.x.p*l.q);}).join('\n')+
-    '\n\nТовары: '+rub(t.sub)+(t.disc>0?'\nСкидка за объём: −'+rub(t.disc):'')+'\nИтого: '+rub(t.total)+' + доставка\n\n'+v.name+', '+v.phone+'\n'+v.dl+(v.dl==='Доставка'?': '+v.addr:'')+(v.comment?'\nКомментарий: '+v.comment:'');
+  var txt='Заказ '+num+' ('+(S.mode==='wholesale'?'опт':'розница')+')\n'+L.map(function(l,i){return (i+1)+'. '+l.x.n+(l.x.v?' ('+l.x.v+')':'')+' × '+l.q+' = '+rub(l.x.p*l.q);}).join('\n')+
+    '\n\nТовары: '+rub(t.sub)+(t.disc>0?'\nСкидка 3% (розница): −'+rub(t.disc):'')+'\nИтого: '+rub(t.total)+' + доставка\n\n'+v.name+', '+v.phone+'\n'+v.dl+(v.dl==='Доставка'?': '+v.addr:'')+(v.comment?'\nКомментарий: '+v.comment:'');
   S.orders.unshift({num:num,date:new Date().toISOString(),total:t.total,txt:txt,test:TEST_MODE});save('ap_orders',S.orders.slice(0,30));
   S.cart={};save('ap_cart',S.cart);render();
   window.__lastOrder=txt;
