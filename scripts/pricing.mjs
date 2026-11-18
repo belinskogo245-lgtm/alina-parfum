@@ -1,40 +1,24 @@
-// Розничные цены «Алина Парфюм».
-// Правило А (согласовано): прогрессивная наценка к закупочной стоимости по частям розничной суммы заказа:
-//   первые 50 000 ₽ розницы — +30%, 50–100 тыс. — +20%, 100–150 тыс. — +15%, свыше — +10%.
-// Кусочно-линейная непрерывная функция → нет скачка при пересечении порога.
-// Правило Б (2,5 × опт ниже порога) НЕ включено — ждёт решения владельца.
-
-export const BANDS = [ // [верх розничной части, ₽, множитель]
-  [50000, 1.30],
-  [100000, 1.20],
-  [150000, 1.15],
-  [Infinity, 1.10],
-];
-
-export const ceil10 = (x) => Math.ceil(Math.round(x * 100) / 100 / 10) * 10;
-
-// закупочная стоимость (₽) → розничная сумма (₽), без округления
-export function retailFromCost(cost) {
-  let retail = 0, prevTop = 0, left = cost;
-  for (const [top, k] of BANDS) {
-    const bandCost = (top - prevTop) / k; // сколько закупки «помещается» в эту розничную часть
-    const c = Math.min(left, bandCost);
-    retail += c * k; left -= c; prevTop = top;
-    if (left <= 0) break;
-  }
-  return retail;
+// Партнёрский магазин: цены от исходного оптового каталога поставщика.
+// Все расчёты выполняются при каждой автоматической синхронизации каталога.
+export const ceil10 = x => Math.ceil((x - 1e-8) / 10) * 10;
+export const roundRub = x => Math.round(x);
+export function prices({usd, rate, category='', volume=0, name=''}) {
+  const base = Number(usd) * Number(rate); // цена поставщика в рублях
+  if (!(base > 0)) throw new Error('Неверная исходная цена или курс');
+  const cat = String(category).toLowerCase();
+  const title = String(name).toLowerCase();
+  const fixed = (
+    /диффузор|деффузор|diffuser/.test(cat+' '+title) ? [700,950] :
+    volume === 15 ? [290,450] :
+    volume === 22 && /масл|oil/.test(cat+' '+title) ? [600,900] :
+    volume === 25 ? [500,750] :
+    volume === 35 ? [560,850] :
+    volume === 40 && /тестер|tester/.test(cat+' '+title) ? [590,900] : null
+  );
+  if (fixed) return {wholesale:fixed[0], retail:fixed[1]};
+  const premium100 = volume === 100 && /евро|селектив|ниша|\bad\b|оригинальный парфюм ad|а\+д|\bад\b/i.test(category);
+  if (premium100) return {wholesale:ceil10(base*1.3)+100, retail:ceil10(base*2.5)};
+  // Для прочих позиций остаётся прежняя наценка 30%,
+  // пока отдельные цены для опта и розницы не согласованы.
+  return {wholesale:ceil10(base*1.3),retail:ceil10(base*1.3)};
 }
-
-// розничная сумма (₽) → закупочная стоимость (₽): обратное преобразование
-export function costFromRetail(retail) {
-  let cost = 0, prevTop = 0;
-  for (const [top, k] of BANDS) {
-    const part = Math.min(retail, top) - prevTop;
-    if (part <= 0) break;
-    cost += part / k; prevTop = top;
-  }
-  return cost;
-}
-
-// цена одного флакона на витрине: (опт $ × курс) × 1,3, вверх до 10 ₽
-export const unitRetail = (usd, rate) => ceil10(usd * rate * BANDS[0][1]);
