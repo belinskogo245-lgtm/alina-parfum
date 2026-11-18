@@ -2,13 +2,13 @@
 // В результат попадают только розничные цены в рублях — оптовые цены и курс не сохраняются.
 // Запуск: node scripts/build-catalog.mjs [файл.json]  (без аргумента — загрузка с сервера поставщика)
 import { readFile, writeFile } from 'node:fs/promises';
-import { unitRetail } from './pricing.mjs';
+import { prices } from './pricing.mjs';
 
 const API = 'https://script.google.com/macros/s/AKfycbysDIVdkJbYzcfpMO5a8AwE7MOqRdKMN803f0lgjVwKPvRE-rcHGzESyYckJ2-pvYXnhg/exec?action=catalog';
 const DESC = 'https://belinskogo245-lgtm.github.io/shop/desc.json';
 
 // вкладки поставщика, которые не показываем покупателям
-const HIDE = ['Оригинальный парфюм AD'];
+const HIDE = []; // AD и остальные категории поставщика включены
 // названия категорий для покупателя (акционные формулировки поставщика не переносим)
 const CAT_NAME = {
   'Акция 62 мл': 'Флаконы 62 мл',
@@ -38,13 +38,15 @@ for (const r of src.items) {
   if (!name || !(+usd > 0) || HIDE.includes(cat)) continue;
   const imgs = String(photo || '').split(/[,\s]+/).filter((u) => /^https:\/\//.test(u));
   const v = ml(vol, name, cat);
+  const price = prices({usd:+usd,rate:+src.rate,category:cat,volume:v,name});
   items.push({
     id: String(id),
     c: CAT_NAME[cat] || cat,
     n: clean(name),
     v: String(vol || '').replace(/\s+/g, ' ').trim() || (v ? v + ' мл' : ''),
     vb: volBucket(v),
-    p: unitRetail(+usd, +src.rate), // ₽ за флакон
+    p: price.retail, // ₽ за флакон в розницу
+    w: price.wholesale, // ₽ за флакон оптом
     s: inStock(stock) ? 1 : 0,
     i: imgs.slice(0, 4),
     d: String(d || desc[id] || '').trim().slice(0, 600),
@@ -52,6 +54,6 @@ for (const r of src.items) {
   });
 }
 if (items.length < 100) throw new Error('слишком мало товаров: ' + items.length);
-const out = { updated: new Date().toISOString(), count: items.length, items };
+const out = { updated: new Date().toISOString(), count: items.length, pricingVersion:2, items };
 await writeFile(new URL('../catalog.json', import.meta.url), JSON.stringify(out));
 console.log('catalog.json:', items.length, 'товаров,', items.filter((x) => x.s).length, 'в наличии');
