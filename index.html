@@ -204,15 +204,15 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
 
   <div class="about">
     <div><b>Один флакон — тоже заказ</b><span>Без минимальной суммы: выбирайте столько, сколько нужно.</span></div>
-    <div><b>Выгоднее от 50 000 ₽</b><span>В крупных заказах скидка начисляется автоматически, плавно, без скачков.</span></div>
-    <div><b>Доставка по России</b><span>Стоимость доставки Алина рассчитает и сообщит после оформления.</span></div>
+    <div><b>Розничная скидка 3%</b><span>При заказе от 5 000 ₽. Оптовые заказы — от 12 000 ₽.</span></div>
+    <div><b>Доставка по России</b><span>СДЭК, Почта России, Ozon, 5Post. <a href="#" data-act="delivery">Подробнее об условиях доставки</a></span></div>
   </div>
 </main>
 
 <footer><div class="wrap">
   <div class="logo">Алина <i>Парфюм</i></div>
-  <div id="contacts">Контакты и реквизиты появятся после запуска магазина.</div>
-  <div style="margin-top:10px"><a href="#" data-act="openPolicy">Обработка персональных данных</a> · <a href="https://t.me/alina_parfum24_bot">Telegram-бот</a> · <a href="cabinet.html">Кабинеты (демо)</a></div>
+  <div id="contacts">Красноярск · <a href="tel:+79509766407">+7 950 976-64-07</a> · <a href="https://t.me/Alina1991111">Telegram Алины</a></div>
+  <div style="margin-top:10px"><a href="#" data-act="delivery">Доставка и оплата</a> · <a href="#" data-act="openPolicy">Обработка персональных данных</a> · <a href="https://t.me/alina_parfum24_bot">Telegram-бот</a> · <a href="cabinet.html">Кабинеты (демо)</a></div>
   <div style="margin-top:10px;font-size:12px">Цены в рублях. Каталог обновлён: <span id="upd">—</span></div>
 </div></footer>
 
@@ -377,8 +377,19 @@ function openPolicy(){
   sheet('policy','Персональные данные','<p>Имя, телефон и адрес нужны только для выполнения и доставки заказа. Данные хранятся у владельца магазина и не передаются третьим лицам, кроме службы доставки.</p><p>При смене партнёра история заказов сохраняется за магазином; новый партнёр получает доступ к данным только в объёме, нужном для выполнения ваших заказов.</p><p>Чтобы удалить свои данные, напишите в Telegram-бот магазина.</p><p class="note">Черновик. Полный текст политики и реквизиты оператора будут добавлены перед запуском.</p>','<button class="btn block" data-act="close">Понятно</button>');
 }
 
+function openDelivery(){
+  var body='<h3>Как получить заказ</h3>'+
+    '<p><b>По России:</b> СДЭК, Почта России, Ozon или 5Post («Пятёрочка»). Службу и пункт выдачи согласуем перед отправкой.</p>'+
+    '<p><b>Красноярск:</b> местная доставка 200 ₽; бесплатно при заказе от 5 000 ₽ или при оптовом заказе.</p>'+
+    '<p><b>Стоимость доставки по России:</b> рассчитывается отдельно после согласования города, адреса и способа получения.</p>'+
+    '<h3>Оплата</h3><p>После подтверждения заказа Алиной: СБП (Т-Банк) или QR-код. Не переводите деньги до получения реквизитов от Алины.</p>'+
+    '<p><b>Опт:</b> минимальная сумма заказа 12 000 ₽. <b>Розница:</b> от одного товара, скидка 3% от 5 000 ₽.</p>'+
+    '<p>Вопросы: <a href="https://t.me/Alina1991111" target="_blank" rel="noopener">написать Алине в Telegram</a> или <a href="tel:+79509766407">позвонить</a>.</p>';
+  sheet('delivery','Доставка и оплата',body,'<button class="btn block" data-act="close">Понятно</button>');
+}
 /* ===== события ===== */
 var A={
+  delivery:function(e){e.preventDefault();openDelivery();},
   mode:function(e,el){var m=el.getAttribute('data-v');if(m!=='retail'&&m!=='wholesale')return;S.mode=m;save('ap_mode',m);render();renderCart();if(sheetOpen==='product')closeSheet();},
   home:function(e){e.preventDefault();window.scrollTo(0,0);},
   focusSearch:function(){$('catalog').scrollIntoView();setTimeout(function(){$('q').focus();},300);},
