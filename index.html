@@ -379,6 +379,7 @@ function openPolicy(){
 
 /* ===== события ===== */
 var A={
+  mode:function(e,el){var m=el.getAttribute('data-v');if(m!=='retail'&&m!=='wholesale')return;S.mode=m;save('ap_mode',m);render();renderCart();},
   home:function(e){e.preventDefault();window.scrollTo(0,0);},
   focusSearch:function(){$('catalog').scrollIntoView();setTimeout(function(){$('q').focus();},300);},
   cat:function(e,el){S.cat=el.getAttribute('data-v');S.shown=PAGE;render();var t=$('catalog').getBoundingClientRect().top+window.scrollY-60;if(window.scrollY>t)window.scrollTo(0,t);},
@@ -388,7 +389,7 @@ var A={
   inc:function(e,el){var id=el.getAttribute('data-id');var was=S.cart[id]||0;setQty(id,was+1);if(!was&&sheetOpen!=='cart')toast('Добавлено в корзину');},
   dec:function(e,el){var id=el.getAttribute('data-id');setQty(id,(S.cart[id]||0)-1);},
   open:function(e,el){openProduct(el.getAttribute('data-id'));},
-  pinc:function(e,el){var b=$('pq'),n=Math.min(99,+b.textContent+1);b.textContent=n;$('pp').textContent=rub(D.byId[el.getAttribute('data-id')].p*n);},
+  pinc:function(e,el){var b=$('pq'),n=Math.min(99,+b.textContent+1);b.textContent=n;$('pp').textContent=rub(unitPrice(D.byId[el.getAttribute('data-id')])*n);},
   pdec:function(e,el){var b=$('pq'),n=Math.max(1,+b.textContent-1);b.textContent=n;$('pp').textContent=rub(D.byId[el.getAttribute('data-id')].p*n);},
   padd:function(e,el){setQty(el.getAttribute('data-id'),+$('pq').textContent);closeSheet();toast('Корзина обновлена');},
   openCart:function(){openCart();},
