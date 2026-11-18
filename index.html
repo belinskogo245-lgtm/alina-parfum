@@ -288,7 +288,7 @@ function cardHtml(x){
     :q?'<div class="qmini"><button data-act="dec" data-id="'+esc(x.id)+'" aria-label="Меньше">−</button><b>'+q+'</b><button data-act="inc" data-id="'+esc(x.id)+'" aria-label="Больше">+</button></div>'
     :'<button class="add" data-act="inc" data-id="'+esc(x.id)+'" aria-label="В корзину"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>';
   return '<article class="card"><div class="ph" data-act="open" data-id="'+esc(x.id)+'">'+img(x.i[0],x.n)+
-    (!x.s?'<span class="tag out">Нет в наличии</span>':x.new?'<span class="tag new">Новинка</span>':'')+'</div>'+
+    (x.new?'<span class="tag new">Новинка</span>':'')+'</div>'+
     '<div class="body"><div class="cat">'+esc(x.c)+'</div><div class="nm" data-act="open" data-id="'+esc(x.id)+'">'+esc(x.n)+'</div>'+
     (x.v?'<div class="vol">'+esc(x.v)+'</div>':'')+'<div class="row"><span class="price">'+rub(unitPrice(x))+'</span>'+ctl+'</div></div></article>';
 }
@@ -331,9 +331,9 @@ function openProduct(id){
   var x=D.byId[id];if(!x)return;var q=S.cart[id]||0;
   var gal=x.i.length?'<div class="gal">'+x.i.map(function(u){return img(u,x.n);}).join('')+'</div>':'<div class="ph" style="border-radius:18px">'+img('',x.n)+'</div>';
   var body=gal+(x.i.length>1?'<div class="note" style="text-align:center">Листайте фото →</div>':'')+
-    '<div class="pd-cat">'+esc(x.c)+'</div><div class="pd-nm">'+esc(x.n)+'</div><div class="pd-meta">'+(x.v?esc(x.v)+' · ':'')+(x.s?'в наличии':'нет в наличии')+'</div>'+
+    '<div class="pd-cat">'+esc(x.c)+'</div><div class="pd-nm">'+esc(x.n)+'</div><div class="pd-meta">'+(x.v?esc(x.v)+' · ':'')+'</div>'+
     (x.d?'<div class="pd-desc">'+esc(x.d)+'</div>':'');
-  var foot=x.s?'<div class="ft-row"><div class="qty"><button data-act="pdec" data-id="'+esc(id)+'">−</button><b id="pq">'+Math.max(1,q)+'</b><button data-act="pinc" data-id="'+esc(id)+'">+</button></div><button class="btn" data-act="padd" data-id="'+esc(id)+'">'+(q?'Обновить':'В корзину')+' · <span id="pp">'+rub(x.p*Math.max(1,q))+'</span></button></div>'
+  var foot=x.s?'<div class="ft-row"><div class="qty"><button data-act="pdec" data-id="'+esc(id)+'">−</button><b id="pq">'+Math.max(1,q)+'</b><button data-act="pinc" data-id="'+esc(id)+'">+</button></div><button class="btn" data-act="padd" data-id="'+esc(id)+'">'+(q?'Обновить':'В корзину')+' · <span id="pp">'+rub(unitPrice(x)*Math.max(1,q))+'</span></button></div>'
     :'<button class="btn block" disabled>Нет в наличии</button>';
   sheet('product','',body,foot);
 }
@@ -379,7 +379,7 @@ function openPolicy(){
 
 /* ===== события ===== */
 var A={
-  mode:function(e,el){var m=el.getAttribute('data-v');if(m!=='retail'&&m!=='wholesale')return;S.mode=m;save('ap_mode',m);render();renderCart();},
+  mode:function(e,el){var m=el.getAttribute('data-v');if(m!=='retail'&&m!=='wholesale')return;S.mode=m;save('ap_mode',m);render();renderCart();if(sheetOpen==='product')closeSheet();},
   home:function(e){e.preventDefault();window.scrollTo(0,0);},
   focusSearch:function(){$('catalog').scrollIntoView();setTimeout(function(){$('q').focus();},300);},
   cat:function(e,el){S.cat=el.getAttribute('data-v');S.shown=PAGE;render();var t=$('catalog').getBoundingClientRect().top+window.scrollY-60;if(window.scrollY>t)window.scrollTo(0,t);},
@@ -390,7 +390,7 @@ var A={
   dec:function(e,el){var id=el.getAttribute('data-id');setQty(id,(S.cart[id]||0)-1);},
   open:function(e,el){openProduct(el.getAttribute('data-id'));},
   pinc:function(e,el){var b=$('pq'),n=Math.min(99,+b.textContent+1);b.textContent=n;$('pp').textContent=rub(unitPrice(D.byId[el.getAttribute('data-id')])*n);},
-  pdec:function(e,el){var b=$('pq'),n=Math.max(1,+b.textContent-1);b.textContent=n;$('pp').textContent=rub(D.byId[el.getAttribute('data-id')].p*n);},
+  pdec:function(e,el){var b=$('pq'),n=Math.max(1,+b.textContent-1);b.textContent=n;$('pp').textContent=rub(unitPrice(D.byId[el.getAttribute('data-id')])*n);},
   padd:function(e,el){setQty(el.getAttribute('data-id'),+$('pq').textContent);closeSheet();toast('Корзина обновлена');},
   openCart:function(){openCart();},
   clearCart:function(e,el){if(el.getAttribute('data-sure')){var ids=Object.keys(S.cart);S.cart={};save('ap_cart',S.cart);ids.forEach(refreshCard);openCart();renderCart();}else{el.setAttribute('data-sure','1');el.textContent='Нажмите ещё раз, чтобы очистить';}},
