@@ -43,10 +43,9 @@ button{cursor:pointer;border:0;background:none;touch-action:manipulation}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .perks{display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:var(--ink2);font-size:13px}
 .perks b{display:block;color:var(--ink);font:600 20px/1.1 var(--serif)}
-.hero-art{position:relative;aspect-ratio:4/5;border-radius:200px 200px 26px 26px;overflow:hidden;background:linear-gradient(180deg,#fff,var(--powder));box-shadow:0 30px 60px -30px rgba(103,73,145,.26)}
-.hero-art img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s}
-.hero-art img.on{opacity:1}
-.hero-art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 60%,rgba(46,34,38,.25))}
+/* Frame the illustration within the original phone screenshot. */
+.hero-art{position:relative;aspect-ratio:690/804;width:100%;max-width:350px;justify-self:center;margin:0;border-radius:32px;overflow:hidden;background:var(--powder);box-shadow:0 24px 48px -24px rgba(103,73,145,.40)}
+.hero-art img{position:absolute;display:block;width:107.10145%;max-width:none;height:auto;left:-3.47826%;top:-49.50249%}
 /* категории */
 .sec-title{font:500 34px/1.1 var(--serif);margin:34px 0 6px}
 .sec-sub{color:var(--ink2);margin:0 0 16px;font-size:14px}
@@ -160,8 +159,8 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
 }
 @media(min-width:1000px){.grid{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:719px){
-  .hero .wrap{grid-template-columns:1fr;padding-top:26px;padding-bottom:30px}
-  .hero-art{max-width:300px;width:78%;justify-self:center;order:-1;aspect-ratio:1/1.05}
+  .hero .wrap{grid-template-columns:1fr;gap:14px;padding-top:20px;padding-bottom:26px}
+  .hero-art{width:clamp(148px,48vw,230px);order:-1;border-radius:24px}
   .hero{text-align:center}.hero p{margin-left:auto;margin-right:auto}.perks{justify-content:center}
   .about{grid-template-columns:1fr}
 }
@@ -182,7 +181,9 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
     <a class="btn" href="#catalog">Смотреть каталог</a>
     <div class="perks"><div><b id="pCount">2 000+</b>ароматов</div><div><b>Розница</b>от 1 шт.</div><div><b>Опт</b>от 12 000 ₽</div></div>
   </div>
-  <div class="hero-art" id="heroArt"></div>
+  <figure class="hero-art">
+    <img src="assets/alina-illustration.jpg" width="739" height="1600" alt="Девушка с розовым флаконом духов">
+  </figure>
 </div></section>
 
 <main class="wrap" id="catalog">
@@ -264,15 +265,8 @@ function loadCatalog(){
     try{$('upd').textContent=new Date(j.updated).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});}catch(e){}
     // чистим корзину от исчезнувших товаров
     Object.keys(S.cart).forEach(function(id){if(!D.byId[id])delete S.cart[id];});save('ap_cart',S.cart);
-    hero();render();renderCart();
+    render();renderCart();
   }).catch(function(){$('grid').innerHTML='<div class="empty" style="grid-column:1/-1">Каталог временно недоступен. Обновите страницу через минуту.</div>';});
-}
-function hero(){
-  var pool=D.items.filter(function(x){return x.s&&x.i.length&&/Селектив|А+Д|Парфюм 100/.test(x.c);});
-  if(pool.length<3)pool=D.items.filter(function(x){return x.s&&x.i.length;});
-  var pick=[];for(var k=0;k<5&&pool.length;k++)pick.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
-  var box=$('heroArt');box.innerHTML=pick.map(function(x,i){return '<img src="'+esc(x.i[0])+'" alt="" referrerpolicy="no-referrer" style="position:absolute;inset:0"'+(i===0?' class="on"':'')+'>';}).join('');
-  var n=0,ims=box.querySelectorAll('img');if(ims.length>1)setInterval(function(){ims[n].classList.remove('on');n=(n+1)%ims.length;ims[n].classList.add('on');},3800);
 }
 function filtered(){
   var q=S.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
