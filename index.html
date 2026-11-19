@@ -426,6 +426,7 @@ function openDelivery(){
 var ALINA_OWNER_ID='923187775';
 var ownerOrdersData=[];
 var ownerRequestSeq=0;
+var alinaSession=sessionStorage.getItem('alina_owner_session')||'';
 function isAlinaInTelegram(){
   var tg=window.Telegram&&window.Telegram.WebApp;
   return !!(tg&&tg.initData&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&String(tg.initDataUnsafe.user.id)===ALINA_OWNER_ID);
@@ -433,24 +434,51 @@ function isAlinaInTelegram(){
 function ownerButtonSync(){var b=$('ownerOrdersBtn');if(b)b.classList.add('show');}
 function ownerJsonp(action,extra){
   return new Promise(function(resolve,reject){
-    if(!isAlinaInTelegram())return reject(new Error('Откройте магазин из Telegram Алины'));
+    if(action==='owner_orders'&&!isAlinaInTelegram()&&!alinaSession)return reject(new Error('Сначала войдите по коду'));
     var cb='__alinaOrdersCallback'+(++ownerRequestSeq),done=false;
     var script=document.createElement('script');
     var timer=setTimeout(function(){finish(new Error('Сервер не ответил'));},18000);
     function finish(err,result){if(done)return;done=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);}
     window[cb]=function(result){if(!result||!result.ok)finish(new Error(result&&result.error||'Доступ не подтверждён'));else finish(null,result);};
     script.onerror=function(){finish(new Error('Не удалось связаться с сервером'));};
-    var params=new URLSearchParams({action:action,initData:window.Telegram.WebApp.initData,callback:cb});
+    var params=new URLSearchParams({action:action,callback:cb});
+    if(isAlinaInTelegram())params.set('initData',window.Telegram.WebApp.initData);
+    else if(alinaSession&&action==='owner_orders')params.set('session',alinaSession);
     if(extra)Object.keys(extra).forEach(function(k){params.set(k,extra[k]);});
     script.src=ORDER_API_URL+'?'+params.toString();
     document.head.appendChild(script);
   });
 }
+function ownerLoginScreen(message){
+  sheet('ownerOrders','🔐 Вход для Алины',
+    '<p class="note">Для просмотра заказов получи одноразовый код в своём Telegram-боте. Код действует 5 минут.</p>'+
+    (message?'<div class="test">'+esc(message)+'</div>':'')+
+    '<button class="btn block" data-act="ownerSendCode">📩 Получить код в Telegram</button>'+
+    '<label for="alinaCode" style="display:block;margin-top:16px">Код из сообщения</label>'+
+    '<input id="alinaCode" inputmode="numeric" maxlength="8" autocomplete="one-time-code" placeholder="8 цифр" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:white;margin:6px 0 12px">'+
+    '<button class="btn block" data-act="ownerVerifyCode">Открыть мои заказы</button>',
+    '<button class="btn block light" data-act="close">Закрыть</button>');
+}
+function ownerSendCode(){
+  ownerJsonp('owner_login_request').then(function(r){toast(r.message||'Код отправлен Алине');}).catch(function(e){toast(e.message);});
+}
+function ownerVerifyCode(){
+  var field=$('alinaCode'),code=field&&field.value.trim();
+  if(!/^[0-9]{8}$/.test(code||''))return toast('Введи 8 цифр');
+  ownerJsonp('owner_login_verify',{code:code}).then(function(r){
+    alinaSession=r.session;sessionStorage.setItem('alina_owner_session',r.session);
+    ownerOrdersLoad();
+  }).catch(function(e){toast(e.message);});
+}
 function ownerOrdersOpen(){
-  if(!isAlinaInTelegram()){sheet('ownerOrders','🔐 Вход для Алины','<p>Раздел заказов доступен только Алине. При открытии через обычный браузер потребуется защищённый вход, который пока не настроен.</p><p class="note">Пока откройте магазин через кнопку MiniApp в Telegram Алины.</p>','<button class="btn block" data-act="close">Понятно</button>');return;}
+  if(!isAlinaInTelegram()&&!alinaSession)return ownerLoginScreen();
+  ownerOrdersLoad();
+}
+function ownerOrdersLoad(){
   sheet('ownerOrders','📦 Мои заказы','<p class="note">Загружаем заказы…</p>','<button class="btn block" data-act="close">Закрыть</button>');
   ownerJsonp('owner_orders').then(function(result){ownerOrdersData=result.orders||[];ownerOrdersRender();}).catch(function(e){
-    if(sheetOpen==='ownerOrders')$('sheet').querySelector('.bd').innerHTML='<div class="test">'+esc(e.message)+'</div><p class="note">Если серверная часть ещё не опубликована, заказы здесь пока не появятся.</p>';
+    if(!isAlinaInTelegram()){alinaSession='';sessionStorage.removeItem('alina_owner_session');ownerLoginScreen(e.message);return;}
+    if(sheetOpen==='ownerOrders')$('sheet').querySelector('.bd').innerHTML='<div class="test">'+esc(e.message)+'</div>';
   });
 }
 function ownerOrdersRender(){
@@ -473,6 +501,8 @@ setInterval(ownerButtonSync,1500);
 /* ===== события ===== */
 var A={
   ownerOrders:function(){ownerOrdersOpen();},
+  ownerSendCode:function(){ownerSendCode();},
+  ownerVerifyCode:function(){ownerVerifyCode();},
   ownerPick:function(e,el){ownerPick(el);},
   delivery:function(e){e.preventDefault();openDelivery();},
   mode:function(e,el){var m=el.getAttribute('data-v');if(m!=='retail'&&m!=='wholesale')return;S.mode=m;save('ap_mode',m);render();renderCart();if(sheetOpen==='product')closeSheet();},
