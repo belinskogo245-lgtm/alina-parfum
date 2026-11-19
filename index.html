@@ -164,11 +164,24 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
   .hero{text-align:center}.hero p{margin-left:auto;margin-right:auto}.perks{justify-content:center}
   .about{grid-template-columns:1fr}
 }
+
+/* Панель заказов владельца: показываем только внутри Telegram Алины.
+   Сервер независимо проверяет подписанные Telegram initData. */
+.owner-orders-btn{display:none;align-items:center;gap:6px;border-radius:999px;background:var(--powder);padding:9px 13px;font-weight:700;font-size:12px;white-space:nowrap}
+.owner-orders-btn.show{display:inline-flex}
+.owner-order{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;margin:10px 0}
+.owner-order h4{margin:0 0 7px;font-size:16px}
+.owner-order .ln{align-items:flex-start}
+.owner-order .ln img{width:70px;height:70px}
+.owner-order .meta{font-size:13px;color:var(--ink2);white-space:pre-wrap}
+.owner-order .picked{opacity:.55}
+.owner-order .picked b{text-decoration:line-through}
+.owner-order input[type=checkbox]{width:22px;height:22px;accent-color:var(--rose-d)}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="logo" href="#" data-act="home">Алина <i>Парфюм</i></a><div class="sp"></div>
+  <a class="logo" href="#" data-act="home">Алина <i>Парфюм</i></a><div class="sp"></div><button class="owner-orders-btn" id="ownerOrdersBtn" data-act="ownerOrders">📦 Мои заказы</button>
   <button class="icon-btn" data-act="focusSearch" aria-label="Поиск"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
   <button class="icon-btn" data-act="openCart" aria-label="Корзина"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span class="cnt" id="cnt"></span></button>
 </div></header>
@@ -409,8 +422,58 @@ function openDelivery(){
     '<p>Вопросы: <a href="https://t.me/Alina1991111" target="_blank" rel="noopener">написать Алине в Telegram</a> или <a href="tel:+79509766407">позвонить</a>.</p>';
   sheet('delivery','Доставка и оплата',body,'<button class="btn block" data-act="close">Понятно</button>');
 }
+/* ===== заказы Алины ===== */
+var ALINA_OWNER_ID='923187775';
+var ownerOrdersData=[];
+var ownerRequestSeq=0;
+function isAlinaInTelegram(){
+  var tg=window.Telegram&&window.Telegram.WebApp;
+  return !!(tg&&tg.initData&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&String(tg.initDataUnsafe.user.id)===ALINA_OWNER_ID);
+}
+function ownerButtonSync(){var b=$('ownerOrdersBtn');if(b)b.classList.toggle('show',isAlinaInTelegram());}
+function ownerJsonp(action,extra){
+  return new Promise(function(resolve,reject){
+    if(!isAlinaInTelegram())return reject(new Error('Откройте магазин из Telegram Алины'));
+    var cb='__alinaOrdersCallback'+(++ownerRequestSeq),done=false;
+    var script=document.createElement('script');
+    var timer=setTimeout(function(){finish(new Error('Сервер не ответил'));},18000);
+    function finish(err,result){if(done)return;done=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);}
+    window[cb]=function(result){if(!result||!result.ok)finish(new Error(result&&result.error||'Доступ не подтверждён'));else finish(null,result);};
+    script.onerror=function(){finish(new Error('Не удалось связаться с сервером'));};
+    var params=new URLSearchParams({action:action,initData:window.Telegram.WebApp.initData,callback:cb});
+    if(extra)Object.keys(extra).forEach(function(k){params.set(k,extra[k]);});
+    script.src=ORDER_API_URL+'?'+params.toString();
+    document.head.appendChild(script);
+  });
+}
+function ownerOrdersOpen(){
+  if(!isAlinaInTelegram())return toast('Доступ только у Алины в Telegram');
+  sheet('ownerOrders','📦 Мои заказы','<p class="note">Загружаем заказы…</p>','<button class="btn block" data-act="close">Закрыть</button>');
+  ownerJsonp('owner_orders').then(function(result){ownerOrdersData=result.orders||[];ownerOrdersRender();}).catch(function(e){
+    if(sheetOpen==='ownerOrders')$('sheetBody').innerHTML='<div class="test">'+esc(e.message)+'</div><p class="note">Если серверная часть ещё не опубликована, заказы здесь пока не появятся.</p>';
+  });
+}
+function ownerOrdersRender(){
+  if(sheetOpen!=='ownerOrders')return;
+  var html=ownerOrdersData.length?'':'<div class="empty">Заказов пока нет</div>';
+  ownerOrdersData.forEach(function(o){
+    var p=JSON.parse(localStorage.getItem('alina_picked_'+o.id)||'{}');
+    html+='<div class="owner-order"><h4>Заказ '+esc(o.id)+'</h4><div class="meta">'+esc(o.status)+' · '+esc(o.date||'')+'\\n'+esc(o.name||'')+' · '+esc(o.phone||'')+'\\n'+esc(o.delivery||'')+' '+esc(o.address||'')+'</div>';
+    (o.items||[]).forEach(function(item,i){var x=D.byId[item.id]||{},pic=x.i&&x.i[0],checked=!!p[i];html+='<div class="ln'+(checked?' picked':'')+'">'+(pic?img(pic,item.name):'<div class="ni"></div>')+'<div class="t"><b>'+esc(item.name||x.n||'Товар')+'</b><span>'+esc(String(item.qty||1))+' шт.'+(item.price?' · '+rub(item.price):'')+'</span></div><input type="checkbox" aria-label="Собрано" data-act="ownerPick" data-id="'+esc(o.id)+'" data-index="'+i+'" '+(checked?'checked':'')+'></div>';});
+    html+='<div class="sum"><div class="tot"><span>Сумма</span><b>'+rub(o.total||0)+'</b></div></div><p class="note">Отметки сборки сохраняются на этом устройстве. Подтверждение оплаты — в Telegram-боте.</p></div>';
+  });
+  $('sheetBody').innerHTML=html;
+}
+function ownerPick(el){
+  var id=el.getAttribute('data-id'),index=el.getAttribute('data-index'),key='alina_picked_'+id;
+  var p=JSON.parse(localStorage.getItem(key)||'{}');p[index]=el.checked;localStorage.setItem(key,JSON.stringify(p));
+  var line=el.closest('.ln');if(line)line.classList.toggle('picked',el.checked);
+}
+setInterval(ownerButtonSync,1500);
 /* ===== события ===== */
 var A={
+  ownerOrders:function(){ownerOrdersOpen();},
+  ownerPick:function(e,el){ownerPick(el);},
   delivery:function(e){e.preventDefault();openDelivery();},
   mode:function(e,el){var m=el.getAttribute('data-v');if(m!=='retail'&&m!=='wholesale')return;S.mode=m;save('ap_mode',m);render();renderCart();if(sheetOpen==='product')closeSheet();},
   home:function(e){e.preventDefault();window.scrollTo(0,0);},
@@ -445,6 +508,7 @@ $('fSort').addEventListener('change',function(){S.sort=this.value;S.shown=PAGE;r
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&sheetOpen)closeSheet();});
 window.addEventListener('error',function(e){toast('Ошибка скрипта: '+e.message);});
 loadCatalog();
+ownerButtonSync();
 })();
 </script>
 </body>
