@@ -234,7 +234,7 @@ function unitPrice(x){return S.mode==='wholesale'?(x.w||x.p):x.p;}
 function totals(sub){var disc=S.mode==='retail'&&sub>=RETAIL_DISCOUNT_AT?Math.round(sub*.03):0;return {sub:sub,total:sub-disc,disc:disc};}
 
 var ORDER_API_URL='https://script.google.com/macros/s/AKfycbycIlexPgRoDVWhSVxyL0EHDoDo5VKB75uz74iHePylCK6SK2xwhmlJqnQpLaoUF40OhQ/exec'; // backend магазина Алины; не содержит секретов
-var TEST_MODE=true; // безопасно: включить приём заказов только после проверки API и Telegram webhook
+var TEST_MODE=false; // приём заказов через Google Apps Script; подтверждение доставки требует проверки у Алины
 var PAGE=24;
 var D={items:[],byId:{},cats:[],vols:[]};
 var S={cat:'',q:'',vol:'',stock:true,mode:load('ap_mode','retail'),sort:'',shown:PAGE,cart:load('ap_cart',{}),orders:load('ap_orders',[])};
@@ -375,12 +375,25 @@ function submitOrder(){if(S.mode==='wholesale'&&cartSub()<WHOLESALE_MIN)return t
   var L=cartLines(),t=totals(cartSub()),num='АП-'+Date.now().toString(36).slice(-6).toUpperCase();
   var txt='Заказ '+num+' ('+(S.mode==='wholesale'?'опт':'розница')+')\n'+L.map(function(l,i){return (i+1)+'. '+l.x.n+(l.x.v?' ('+l.x.v+')':'')+' × '+l.q+' = '+rub(unitPrice(l.x)*l.q);}).join('\n')+
     '\n\nТовары: '+rub(t.sub)+(t.disc>0?'\nСкидка 3% (розница): −'+rub(t.disc):'')+'\nИтого: '+rub(t.total)+' + доставка\n\n'+v.name+', '+v.phone+'\n'+v.dl+(v.dl==='Доставка'?': '+v.addr:'')+(v.comment?'\nКомментарий: '+v.comment:'');
+  function finishOrder(){
   S.orders.unshift({num:num,date:new Date().toISOString(),total:t.total,txt:txt,test:TEST_MODE});save('ap_orders',S.orders.slice(0,30));
   S.cart={};save('ap_cart',S.cart);render();
   window.__lastOrder=txt;
-  sheet('done','','<div class="ok-ic">✓</div><h3 style="text-align:center;font:500 30px/1.1 var(--serif);margin:0 0 6px">Заказ '+num+' оформлен</h3><p style="text-align:center;color:var(--ink2);margin:0">'+(TEST_MODE?'Это тест: заказ сохранён только на этом устройстве.':'Алина свяжется с вами для подтверждения и оплаты.')+'</p><div class="order-txt">'+esc(txt)+'</div>',
+  sheet('done','','<div class="ok-ic">✓</div><h3 style="text-align:center;font:500 30px/1.1 var(--serif);margin:0 0 6px">Заказ '+num+' оформлен</h3><p style="text-align:center;color:var(--ink2);margin:0">'+(TEST_MODE?'Это тест: заказ сохранён только на этом устройстве.':'Заявка отправлена на обработку. Дождитесь подтверждения Алины: доставка заявки в Telegram ещё не подтверждена.')+'</p><div class="order-txt">'+esc(txt)+'</div>',
     '<div class="ft-row"><button class="btn light" data-act="copyOrder">Скопировать</button><button class="btn" data-act="close">Готово</button></div>');
   renderCart();
+  }
+  if(TEST_MODE){finishOrder();return;}
+  if(!ORDER_API_URL){toast('Приём заказов временно недоступен');return;}
+  var submitBtn=document.querySelector('[data-act="submit"]');
+  if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Отправляем заказ…';}
+  var payload={action:'new_order',name:v.name,phone:v.phone,delivery:v.dl,address:v.addr,comment:v.comment,mode:S.mode,total:t.total,items:L.map(function(l){return {id:l.x.id,name:l.x.n+(l.x.v?' ('+l.x.v+')':''),qty:l.q,price:unitPrice(l.x)};})};
+  fetch(ORDER_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}).then(function(){
+    finishOrder();
+  }).catch(function(){
+    if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Повторить отправку';}
+    toast('Не удалось отправить заказ. Проверьте интернет.');
+  });
 }
 function openPolicy(){
   sheet('policy','Персональные данные','<p>Имя, телефон и адрес нужны только для выполнения и доставки заказа. Данные хранятся у владельца магазина и не передаются третьим лицам, кроме службы доставки.</p><p>При смене партнёра история заказов сохраняется за магазином; новый партнёр получает доступ к данным только в объёме, нужном для выполнения ваших заказов.</p><p>Чтобы удалить свои данные, напишите в Telegram-бот магазина.</p><p class="note">Черновик. Полный текст политики и реквизиты оператора будут добавлены перед запуском.</p>','<button class="btn block" data-act="close">Понятно</button>');
