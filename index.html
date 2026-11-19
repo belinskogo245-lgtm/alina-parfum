@@ -232,7 +232,8 @@ function unitPrice(x){return S.mode==='wholesale'?(x.w||x.p):x.p;}
 /* сумма по ценам витрины → итог с плавной скидкой за объём */
 function totals(sub){var disc=S.mode==='retail'&&sub>=RETAIL_DISCOUNT_AT?Math.round(sub*.03):0;return {sub:sub,total:sub-disc,disc:disc};}
 
-var TEST_MODE=true; // заказы не отправляются автоматически; сначала настройка получателя
+var ORDER_API_URL='https://script.google.com/macros/s/AKfycbycIlexPgRoDVWhSVxyL0EHDoDo5VKB75uz74iHePylCK6SK2xwhmlJqnQpLaoUF40OhQ/exec'; // backend магазина Алины; не содержит секретов
+var TEST_MODE=true; // безопасно: включить приём заказов только после проверки API и Telegram webhook
 var PAGE=24;
 var D={items:[],byId:{},cats:[],vols:[]};
 var S={cat:'',q:'',vol:'',stock:true,mode:load('ap_mode','retail'),sort:'',shown:PAGE,cart:load('ap_cart',{}),orders:load('ap_orders',[])};
