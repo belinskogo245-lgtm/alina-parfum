@@ -167,7 +167,7 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
 
 /* Панель заказов владельца: показываем только внутри Telegram Алины.
    Сервер независимо проверяет подписанные Telegram initData. */
-.owner-orders-btn{display:none;align-items:center;gap:6px;border-radius:999px;background:var(--powder);padding:9px 13px;font-weight:700;font-size:12px;white-space:nowrap}
+.owner-orders-btn{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:var(--powder);padding:9px 13px;font-weight:700;font-size:12px;white-space:nowrap}
 .owner-orders-btn.show{display:inline-flex}
 .owner-order{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;margin:10px 0}
 .owner-order h4{margin:0 0 7px;font-size:16px}
@@ -430,7 +430,7 @@ function isAlinaInTelegram(){
   var tg=window.Telegram&&window.Telegram.WebApp;
   return !!(tg&&tg.initData&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&String(tg.initDataUnsafe.user.id)===ALINA_OWNER_ID);
 }
-function ownerButtonSync(){var b=$('ownerOrdersBtn');if(b)b.classList.toggle('show',isAlinaInTelegram());}
+function ownerButtonSync(){var b=$('ownerOrdersBtn');if(b)b.classList.add('show');}
 function ownerJsonp(action,extra){
   return new Promise(function(resolve,reject){
     if(!isAlinaInTelegram())return reject(new Error('Откройте магазин из Telegram Алины'));
@@ -447,7 +447,7 @@ function ownerJsonp(action,extra){
   });
 }
 function ownerOrdersOpen(){
-  if(!isAlinaInTelegram())return toast('Доступ только у Алины в Telegram');
+  if(!isAlinaInTelegram()){sheet('ownerOrders','🔐 Вход для Алины','<p>Раздел заказов доступен только Алине. При открытии через обычный браузер потребуется защищённый вход, который пока не настроен.</p><p class="note">Пока откройте магазин через кнопку MiniApp в Telegram Алины.</p>','<button class="btn block" data-act="close">Понятно</button>');return;}
   sheet('ownerOrders','📦 Мои заказы','<p class="note">Загружаем заказы…</p>','<button class="btn block" data-act="close">Закрыть</button>');
   ownerJsonp('owner_orders').then(function(result){ownerOrdersData=result.orders||[];ownerOrdersRender();}).catch(function(e){
     if(sheetOpen==='ownerOrders')$('sheet').querySelector('.bd').innerHTML='<div class="test">'+esc(e.message)+'</div><p class="note">Если серверная часть ещё не опубликована, заказы здесь пока не появятся.</p>';
