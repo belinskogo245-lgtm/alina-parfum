@@ -450,7 +450,7 @@ function ownerOrdersOpen(){
   if(!isAlinaInTelegram())return toast('Доступ только у Алины в Telegram');
   sheet('ownerOrders','📦 Мои заказы','<p class="note">Загружаем заказы…</p>','<button class="btn block" data-act="close">Закрыть</button>');
   ownerJsonp('owner_orders').then(function(result){ownerOrdersData=result.orders||[];ownerOrdersRender();}).catch(function(e){
-    if(sheetOpen==='ownerOrders')$('sheetBody').innerHTML='<div class="test">'+esc(e.message)+'</div><p class="note">Если серверная часть ещё не опубликована, заказы здесь пока не появятся.</p>';
+    if(sheetOpen==='ownerOrders')$('sheet').querySelector('.bd').innerHTML='<div class="test">'+esc(e.message)+'</div><p class="note">Если серверная часть ещё не опубликована, заказы здесь пока не появятся.</p>';
   });
 }
 function ownerOrdersRender(){
@@ -462,7 +462,7 @@ function ownerOrdersRender(){
     (o.items||[]).forEach(function(item,i){var x=D.byId[item.id]||{},pic=x.i&&x.i[0],checked=!!p[i];html+='<div class="ln'+(checked?' picked':'')+'">'+(pic?img(pic,item.name):'<div class="ni"></div>')+'<div class="t"><b>'+esc(item.name||x.n||'Товар')+'</b><span>'+esc(String(item.qty||1))+' шт.'+(item.price?' · '+rub(item.price):'')+'</span></div><input type="checkbox" aria-label="Собрано" data-act="ownerPick" data-id="'+esc(o.id)+'" data-index="'+i+'" '+(checked?'checked':'')+'></div>';});
     html+='<div class="sum"><div class="tot"><span>Сумма</span><b>'+rub(o.total||0)+'</b></div></div><p class="note">Отметки сборки сохраняются на этом устройстве. Подтверждение оплаты — в Telegram-боте.</p></div>';
   });
-  $('sheetBody').innerHTML=html;
+  $('sheet').querySelector('.bd').innerHTML=html;
 }
 function ownerPick(el){
   var id=el.getAttribute('data-id'),index=el.getAttribute('data-index'),key='alina_picked_'+id;
