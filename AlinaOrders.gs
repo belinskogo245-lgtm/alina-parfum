@@ -48,7 +48,7 @@ function verifyAlinaInitData_(initData) {
   if (!token || !alinaId) throw new Error('Не заданы настройки');
   const pairs = initData.split('&').map(function(part) {
     const pos = part.indexOf('=');
-    return [decodeURIComponent(part.slice(0,pos).replace(/\\+/g,' ')), decodeURIComponent(part.slice(pos+1).replace(/\\+/g,' '))];
+    return [decodeURIComponent(part.slice(0,pos).replace(/\+/g,' ')), decodeURIComponent(part.slice(pos+1).replace(/\+/g,' '))];
   });
   const map = {};
   pairs.forEach(function(p){map[p[0]]=p[1];});
@@ -58,7 +58,7 @@ function verifyAlinaInitData_(initData) {
   if (!/^[a-f0-9]{64}$/.test(hash) || !authDate || authDate > now+60 || now-authDate > 600) throw new Error('Устаревшая подпись');
   const check = pairs.filter(function(p){return p[0]!=='hash';})
     .sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:0;})
-    .map(function(p){return p[0]+'='+p[1];}).join('\\n');
+    .map(function(p){return p[0]+'='+p[1];}).join('\n');
   const secret = Utilities.computeHmacSha256Signature(token, 'WebAppData');
   const expected = Utilities.computeHmacSha256Signature(check, secret)
     .map(function(b){return ('0'+(b&255).toString(16)).slice(-2);}).join('');
