@@ -356,7 +356,21 @@ function openCheckout(){if(S.mode==='wholesale'&&cartSub()<WHOLESALE_MIN)return 
     '<label for="fm">Комментарий</label><textarea id="fm" name="comment" placeholder="Удобное время, пожелания"></textarea>'+
     '<label class="check"><input type="checkbox" name="agree" required><span>Согласна(ен) на <a href="#" data-act="openPolicy">обработку персональных данных</a> для выполнения заказа</span></label><div class="err" id="e_agree">Нужно согласие</div>'+
     '</form>'+sumHtml(t)+'<p class="note">Оплата — переводом Алине после подтверждения заказа. Реквизиты пришлём лично.</p>';
-  sheet('checkout','Оформление',body,'<button class="btn block" data-act="submit">'+(TEST_MODE?'Оформить (тест)':'Оформить заказ')+' · '+rub(t.total)+'</button>');
+  if(TEST_MODE)body+='<p class="note">Проверка связи: кнопка ниже отправит Алине отдельный тестовый заказ без ваших данных. Убедитесь, что он пришёл, прежде чем включать продажи.</p>';
+  sheet('checkout','Оформление',body,'<button class="btn block" data-act="submit">'+(TEST_MODE?'Оформить (тест)':'Оформить заказ')+' · '+rub(t.total)+'</button>'+(TEST_MODE?'<button class="btn light block" style="margin-top:8px" data-act="testDelivery">Отправить тест Алине</button>':''));
+}
+function testOrderDelivery(){
+  if(!ORDER_API_URL)return toast('Адрес сервера не настроен');
+  var btn=document.querySelector('[data-act="testDelivery"]');
+  if(btn){btn.disabled=true;btn.textContent='Отправляем тест…';}
+  var sample={action:'new_order',name:'ТЕСТ — проверка сайта',phone:'0000000000',delivery:'Самовывоз',address:'Тестовый заказ — не собирать',total:0,items:[{name:'ТЕСТ: проверка связи сайта с Telegram (не собирать)',qty:1}]};
+  fetch(ORDER_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(sample)}).then(function(){
+    toast('Тест отправлен. Проверьте Telegram Алины: доставка не подтверждается браузером.');
+    if(btn){btn.textContent='Тест отправлен — проверьте Telegram';}
+  }).catch(function(err){
+    toast('Ошибка сети: '+err.message);
+    if(btn){btn.disabled=false;btn.textContent='Отправить тест Алине';}
+  });
 }
 function submitOrder(){if(S.mode==='wholesale'&&cartSub()<WHOLESALE_MIN)return toast('Оптовый заказ от 12 000 ₽');
   var f=$('f'),v={name:$('fn').value.trim(),phone:$('fp').value.trim(),dl:(f.querySelector('[name=dl]:checked')||{}).value,addr:$('fc').value.trim(),comment:$('fm').value.trim()};
@@ -408,6 +422,7 @@ var A={
   clearCart:function(e,el){if(el.getAttribute('data-sure')){var ids=Object.keys(S.cart);S.cart={};save('ap_cart',S.cart);ids.forEach(refreshCard);openCart();renderCart();}else{el.setAttribute('data-sure','1');el.textContent='Нажмите ещё раз, чтобы очистить';}},
   checkout:function(){openCheckout();},
   submit:function(){submitOrder();},
+  testDelivery:function(){testOrderDelivery();},
   copyOrder:function(){var t=window.__lastOrder||'';(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Скопировано');},function(){toast('Выделите текст заказа и скопируйте');});},
   openPolicy:function(e){e.preventDefault();openPolicy();},
   close:function(){closeSheet();}
