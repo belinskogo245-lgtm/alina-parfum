@@ -12,11 +12,11 @@ function handleOwnerOrdersGet_(e) {
   }
   let result;
   try {
-    if (p.action === 'owner_login_request') {
+    if (p.op === 'owner_login_request') {
       result = requestAlinaLogin_();
       return alinaJsonp_(callback, result);
     }
-    if (p.action === 'owner_login_verify') {
+    if (p.op === 'owner_login_verify') {
       result = verifyAlinaLoginCode_(String(p.code || ''));
       return alinaJsonp_(callback, result);
     }
