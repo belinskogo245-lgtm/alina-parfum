@@ -441,7 +441,7 @@ function ownerJsonp(action,extra){
     function finish(err,result){if(done)return;done=true;clearTimeout(timer);delete window[cb];script.remove();err?reject(err):resolve(result);}
     window[cb]=function(result){if(!result||!result.ok)finish(new Error(result&&result.error||'Доступ не подтверждён'));else finish(null,result);};
     script.onerror=function(){finish(new Error('Не удалось связаться с сервером'));};
-    var params=new URLSearchParams({action:action,callback:cb});
+    var params=new URLSearchParams({action:'owner_orders',op:action,callback:cb});
     if(isAlinaInTelegram())params.set('initData',window.Telegram.WebApp.initData);
     else if(alinaSession&&action==='owner_orders')params.set('session',alinaSession);
     if(extra)Object.keys(extra).forEach(function(k){params.set(k,extra[k]);});
