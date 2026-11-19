@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Алина Парфюм — ароматы с доставкой</title>
 <meta name="description" content="Алина Парфюм: селективная, нишевая и арабская парфюмерия. Один флакон или несколько — с доставкой.">
-<meta name="theme-color" content="#f6e7ea">
+<meta name="theme-color" content="#eee6fa">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js" async onload="window.__tg&&window.__tg()"></script>
 <style>
-:root{--bg:#fdf8f6;--cream:#fbf1ec;--powder:#f6e2e6;--rose:#e9c3cc;--rose-d:#b9798a;--ink:#2e2226;--ink2:#6f5c62;--line:#efe1e3;--gold:#b08d57;--r:18px;
+:root{--bg:#faf7ff;--cream:#f4edff;--powder:#ece1fb;--rose:#d6c0f3;--rose-d:#8460b2;--ink:#30253d;--ink2:#726680;--line:#e9dff2;--gold:#b08d57;--r:18px;
   --serif:"Cormorant Garamond",Georgia,serif;--sans:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -20,7 +20,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;touch-action:manipulation}
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
 /* шапка */
-.top{position:sticky;top:0;z-index:30;background:rgba(253,248,246,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:30;background:rgba(250,247,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .top .wrap{display:flex;align-items:center;gap:12px;height:58px}
 .logo{font:600 24px/1 var(--serif);letter-spacing:.02em;white-space:nowrap}
 .logo i{font-style:italic;color:var(--rose-d)}
@@ -43,7 +43,7 @@ button{cursor:pointer;border:0;background:none;touch-action:manipulation}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .perks{display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:var(--ink2);font-size:13px}
 .perks b{display:block;color:var(--ink);font:600 20px/1.1 var(--serif)}
-.hero-art{position:relative;aspect-ratio:4/5;border-radius:200px 200px 26px 26px;overflow:hidden;background:linear-gradient(180deg,#fff,var(--powder));box-shadow:0 30px 60px -30px rgba(120,60,75,.35)}
+.hero-art{position:relative;aspect-ratio:4/5;border-radius:200px 200px 26px 26px;overflow:hidden;background:linear-gradient(180deg,#fff,var(--powder));box-shadow:0 30px 60px -30px rgba(103,73,145,.26)}
 .hero-art img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s}
 .hero-art img.on{opacity:1}
 .hero-art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 60%,rgba(46,34,38,.25))}
@@ -89,7 +89,7 @@ button{cursor:pointer;border:0;background:none;touch-action:manipulation}
 .qmini b{min-width:18px;text-align:center;font-size:14px}
 .more{display:flex;justify-content:center;margin:20px 0}
 .empty{text-align:center;color:var(--ink2);padding:40px 10px}
-.skel{aspect-ratio:.72;border-radius:var(--r);background:linear-gradient(90deg,#f6eeee 25%,#fbf6f5 50%,#f6eeee 75%);background-size:200% 100%;animation:sk 1.2s infinite}
+.skel{aspect-ratio:.72;border-radius:var(--r);background:linear-gradient(90deg,#eee6fa 25%,#faf7ff 50%,#eee6fa 75%);background-size:200% 100%;animation:sk 1.2s infinite}
 @keyframes sk{to{background-position:-200% 0}}
 /* преимущества / о магазине */
 .about{margin:44px 0 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -100,7 +100,7 @@ footer{margin-top:40px;padding:30px 0 20px;border-top:1px solid var(--line);colo
 footer .logo{font-size:22px;color:var(--ink);margin-bottom:8px}
 footer a{color:var(--ink2)}
 /* нижняя панель корзины */
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:35;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(253,248,246,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .25s}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:35;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(250,247,255,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .25s}
 .bar.show{transform:none}
 .bar .btn{width:100%;max-width:560px;margin:0 auto;display:flex;justify-content:space-between}
 /* модальные окна */
@@ -180,7 +180,7 @@ form input:focus,form select:focus,form textarea:focus{border-color:var(--rose-d
     <h1>Ароматы, которые <em>помнят</em></h1>
     <p>Селективная, нишевая и арабская парфюмерия. Берите один флакон для себя или несколько — в подарок.</p>
     <a class="btn" href="#catalog">Смотреть каталог</a>
-    <div class="perks"><div><b id="pCount">2 000+</b>ароматов</div><div><b>от 1 шт.</b>без минимума</div><div><b>Россия</b>доставка</div></div>
+    <div class="perks"><div><b id="pCount">2 000+</b>ароматов</div><div><b>Розница</b>от 1 шт.</div><div><b>Опт</b>от 12 000 ₽</div></div>
   </div>
   <div class="hero-art" id="heroArt"></div>
 </div></section>
@@ -232,7 +232,7 @@ function unitPrice(x){return S.mode==='wholesale'?(x.w||x.p):x.p;}
 /* сумма по ценам витрины → итог с плавной скидкой за объём */
 function totals(sub){var disc=S.mode==='retail'&&sub>=RETAIL_DISCOUNT_AT?Math.round(sub*.03):0;return {sub:sub,total:sub-disc,disc:disc};}
 
-var TEST_MODE=true; // заказы не отправляются, пока владелец не разрешит приём
+var TEST_MODE=true; // заказы не отправляются автоматически; сначала настройка получателя
 var PAGE=24;
 var D={items:[],byId:{},cats:[],vols:[]};
 var S={cat:'',q:'',vol:'',stock:true,mode:load('ap_mode','retail'),sort:'',shown:PAGE,cart:load('ap_cart',{}),orders:load('ap_orders',[])};
@@ -364,7 +364,7 @@ function submitOrder(){if(S.mode==='wholesale'&&cartSub()<WHOLESALE_MIN)return t
   if(!ok)return toast('Проверьте поля формы');
   save('ap_contact',{name:v.name,phone:v.phone,dl:v.dl,addr:v.addr});
   var L=cartLines(),t=totals(cartSub()),num='АП-'+Date.now().toString(36).slice(-6).toUpperCase();
-  var txt='Заказ '+num+' ('+(S.mode==='wholesale'?'опт':'розница')+')\n'+L.map(function(l,i){return (i+1)+'. '+l.x.n+(l.x.v?' ('+l.x.v+')':'')+' × '+l.q+' = '+rub(l.x.p*l.q);}).join('\n')+
+  var txt='Заказ '+num+' ('+(S.mode==='wholesale'?'опт':'розница')+')\n'+L.map(function(l,i){return (i+1)+'. '+l.x.n+(l.x.v?' ('+l.x.v+')':'')+' × '+l.q+' = '+rub(unitPrice(l.x)*l.q);}).join('\n')+
     '\n\nТовары: '+rub(t.sub)+(t.disc>0?'\nСкидка 3% (розница): −'+rub(t.disc):'')+'\nИтого: '+rub(t.total)+' + доставка\n\n'+v.name+', '+v.phone+'\n'+v.dl+(v.dl==='Доставка'?': '+v.addr:'')+(v.comment?'\nКомментарий: '+v.comment:'');
   S.orders.unshift({num:num,date:new Date().toISOString(),total:t.total,txt:txt,test:TEST_MODE});save('ap_orders',S.orders.slice(0,30));
   S.cart={};save('ap_cart',S.cart);render();
