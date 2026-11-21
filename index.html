@@ -267,7 +267,7 @@ window.__tg=function(){var tg=window.Telegram&&window.Telegram.WebApp;if(tg){try
 /* ===== каталог ===== */
 function loadCatalog(){
   $('grid').innerHTML=new Array(8).join('<div class="skel"></div>');
-  fetch('catalog.json?v=5-'+Math.floor(Date.now()/6e5),{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(j){
+  fetch('catalog.json?v=6-'+Math.floor(Date.now()/6e5),{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(j){
     D.items=j.items;D.items.forEach(function(x,i){x.o=i;x.lc=(x.n+' '+x.c).toLowerCase();D.byId[x.id]=x;});
     var cats={},vols={};D.items.forEach(function(x){cats[x.c]=(cats[x.c]||0)+(x.s?1:0);vols[x.vb]=1;});
     D.cats=Object.keys(cats).filter(function(c){return cats[c]>0;}).sort(function(a,b){return cats[b]-cats[a];});
