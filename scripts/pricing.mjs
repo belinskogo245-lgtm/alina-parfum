@@ -7,19 +7,19 @@ export function prices({usd, rate, category='', volume=0, name=''}) {
   if (!(base > 0)) throw new Error('Неверная исходная цена или курс');
   const cat = String(category).toLowerCase();
   const title = String(name).toLowerCase();
-  const fixed = (
-    /диффузор|деффузор|diffuser/.test(cat+' '+title) ? [700,950] :
-    volume === 15 ? [290,450] :
-    volume === 22 && /масл|oil/.test(cat+' '+title) ? [600,900] :
-    volume === 25 ? [500,750] :
-    volume === 35 ? [560,850] :
-    volume === 40 && /тестер|tester/.test(cat+' '+title) ? [590,900] : null
+  // В оптовом каталоге мини-флаконы этой серии обозначены как 15,5 мл.
+  const smallBottle = [15, 15.5, 25, 35].includes(volume);
+  const retail = smallBottle ? ceil10(base * 1.3 + 100) : ceil10(base * 2.5);
+
+  const fixedWholesale = (
+    /диффузор|деффузор|diffuser/.test(cat+' '+title) ? 700 :
+    volume === 15 ? 290 :
+    volume === 22 && /масл|oil/.test(cat+' '+title) ? 600 :
+    volume === 25 ? 500 :
+    volume === 35 ? 560 :
+    volume === 40 && /тестер|tester/.test(cat+' '+title) ? 590 : null
   );
-  const categoryRetail = ['селектив / наборы', 'арабская парфюмерия'].includes(cat) ? ceil10(base * 2.5) : null;
-  if (fixed) return {wholesale:fixed[0], retail:categoryRetail ?? fixed[1]};
   const premium100 = volume === 100 && /евро|селектив|ниша|\bad\b|оригинальный парфюм ad|а\+д|\bад\b/i.test(category);
-  if (premium100) return {wholesale:ceil10(base*1.3)+100, retail:ceil10(base*2.5)};
-  // Для прочих позиций остаётся прежняя наценка 30%,
-  // пока отдельные цены для опта и розницы не согласованы.
-  return {wholesale:ceil10(base*1.3),retail:categoryRetail ?? ceil10(base*1.3)};
+  const wholesale = fixedWholesale ?? (ceil10(base * 1.3) + (premium100 ? 100 : 0));
+  return {wholesale, retail};
 }
