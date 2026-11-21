@@ -45,7 +45,7 @@ for (const r of src.items) {
   const price = prices({usd:+usd,rate:+src.rate,category:cat,volume:v,name});
   let retail = price.retail;
   // Индивидуальные розничные цены для подтверждённых карточек Алины.
-  if (String(id) === '879') retail = 5600; // Louis Vuitton Stellar Times, 100 мл
+  if (['879', '880', '1040'].includes(String(id))) retail = 5600; // Stellar Times и Symphony, 100 мл
   if (String(id) === '3116') retail = ceil10(+usd * +src.rate * 1.5); // La Sultane de Saba, крем-гель
   items.push({
     id: String(id),
