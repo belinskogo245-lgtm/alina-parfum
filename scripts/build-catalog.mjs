@@ -45,6 +45,10 @@ for (const r of src.items) {
   const price = prices({usd:+usd,rate:+src.rate,category:cat,volume:v,name});
   let retail = price.retail;
   // Индивидуальные розничные цены для подтверждённых карточек Алины.
+  const louisVuittonFullBottle = /\blouis\s+vuitton\b/i.test(name)
+    && ['Селектив / наборы', 'Селектив и ниша', 'Оригинальный парфюм AD', 'Евро'].includes(cat)
+    && (v === 100 || v === 0);
+  if (louisVuittonFullBottle) retail = 3750;
   if (['879', '880', '1040'].includes(String(id))) retail = 5600; // Stellar Times и Symphony, 100 мл
   if (String(id) === '3116') retail = ceil10(+usd * +src.rate * 1.5); // La Sultane de Saba, крем-гель
   items.push({
