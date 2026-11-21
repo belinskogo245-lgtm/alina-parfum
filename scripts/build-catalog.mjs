@@ -2,7 +2,7 @@
 // В результат попадают только розничные цены в рублях — оптовые цены и курс не сохраняются.
 // Запуск: node scripts/build-catalog.mjs [файл.json]  (без аргумента — загрузка с сервера поставщика)
 import { readFile, writeFile } from 'node:fs/promises';
-import { prices } from './pricing.mjs';
+import { ceil10, prices } from './pricing.mjs';
 
 const API = 'https://script.google.com/macros/s/AKfycbysDIVdkJbYzcfpMO5a8AwE7MOqRdKMN803f0lgjVwKPvRE-rcHGzESyYckJ2-pvYXnhg/exec?action=catalog';
 const DESC = 'https://belinskogo245-lgtm.github.io/shop/desc.json';
@@ -43,13 +43,17 @@ for (const r of src.items) {
     : undefined;
   const v = ml(vol, Number(namedVolume) === 100 ? namedVolume : undefined, name, cat);
   const price = prices({usd:+usd,rate:+src.rate,category:cat,volume:v,name});
+  let retail = price.retail;
+  // Индивидуальные розничные цены для подтверждённых карточек Алины.
+  if (String(id) === '879') retail = 5600; // Louis Vuitton Stellar Times, 100 мл
+  if (String(id) === '3116') retail = ceil10(+usd * +src.rate * 1.5); // La Sultane de Saba, крем-гель
   items.push({
     id: String(id),
     c: CAT_NAME[cat] || cat,
     n: clean(name),
     v: String(vol || '').replace(/\s+/g, ' ').trim() || (v ? v + ' мл' : ''),
     vb: volBucket(v),
-    p: price.retail, // ₽ за флакон в розницу
+    p: retail, // ₽ за флакон в розницу
     w: price.wholesale, // ₽ за флакон оптом
     s: inStock(stock) ? 1 : 0,
     i: imgs.slice(0, 4),
