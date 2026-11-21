@@ -1,25 +1,44 @@
-// Партнёрский магазин: цены от исходного оптового каталога поставщика.
-// Все расчёты выполняются при каждой автоматической синхронизации каталога.
+// Цены Алины от исходного оптового каталога поставщика.
 export const ceil10 = x => Math.ceil((x - 1e-8) / 10) * 10;
 export const roundRub = x => Math.round(x);
-export function prices({usd, rate, category='', volume=0, name=''}) {
-  const base = Number(usd) * Number(rate); // цена поставщика в рублях
-  if (!(base > 0)) throw new Error('Неверная исходная цена или курс');
-  const cat = String(category).toLowerCase();
-  const title = String(name).toLowerCase();
-  // В оптовом каталоге мини-флаконы этой серии обозначены как 15,5 мл.
-  const smallBottle = [15, 15.5, 25, 35].includes(volume);
-  const retail = smallBottle ? ceil10(base * 1.3 + 100) : ceil10(base * 2.5);
 
-  const fixedWholesale = (
-    /диффузор|деффузор|diffuser/.test(cat+' '+title) ? 700 :
-    volume === 15 ? 290 :
-    volume === 22 && /масл|oil/.test(cat+' '+title) ? 600 :
-    volume === 25 ? 500 :
-    volume === 35 ? 560 :
-    volume === 40 && /тестер|tester/.test(cat+' '+title) ? 590 : null
-  );
-  const premium100 = volume === 100 && /евро|селектив|ниша|\bad\b|оригинальный парфюм ad|а\+д|\bад\b/i.test(category);
-  const wholesale = fixedWholesale ?? (ceil10(base * 1.3) + (premium100 ? 100 : 0));
-  return {wholesale, retail};
+const fixedByVolume = new Map([
+  [22, [900, 650]],
+  [25, [750, 500]],
+  [35, [850, 590]],
+  [40, [1000, 700]],
+  [58, [660, 540]],
+  [62, [900, 600]],
+]);
+const fullSizeCategories = new Set([
+  'селектив / наборы', 'селектив и ниша', 'селектив премиум',
+  'оригинальный парфюм ad', 'ад', 'евро', 'арабская парфюмерия',
+]);
+
+export function prices({usd, rate, category='', volume=0, name=''}) {
+  const base = Number(usd) * Number(rate);
+  if (!(base > 0)) throw new Error('Неверная исходная цена или курс');
+
+  const cat = String(category).trim().toLowerCase();
+  const title = String(name).toLowerCase();
+  const isDiffuser = /диффузор|деффузор|diffuser/.test(cat+' '+title);
+  let fixed = fixedByVolume.get(volume);
+  if (cat === 'дезодоранты') fixed = [550, 480];
+  if (cat.startsWith('лосьоны')) fixed = [400, 320];
+  if (cat === 'арабские духи 30 мл') fixed = [900, 600];
+  if (cat === 'тестеры 15,5 / 12 / 10 мл') fixed = [490, 290];
+  if (cat === 'акция 62 мл') fixed = [900, 600];
+  if (fixed && !isDiffuser) {
+    const [retail, wholesale] = fixed;
+    return {retail, wholesale};
+  }
+
+  // У части полноразмерной парфюмерии объём не заполнен в исходном прайсе.
+  const fullSizeWithoutVolume = volume === 0 && fullSizeCategories.has(cat);
+  const retailMultiplier = volume === 50 || volume === 100 || fullSizeWithoutVolume ? 2 : 2.5;
+  const largeBottle = volume >= 50 || fullSizeWithoutVolume;
+  return {
+    retail: ceil10(base * retailMultiplier),
+    wholesale: isDiffuser ? 700 : ceil10(base * (largeBottle ? 1.2 : 1.3)),
+  };
 }
