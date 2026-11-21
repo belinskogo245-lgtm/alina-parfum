@@ -37,7 +37,11 @@ for (const r of src.items) {
   const [id, cat, name, vol, usd, stock, photo, d] = r;
   if (!name || !(+usd > 0) || HIDE.includes(cat)) continue;
   const imgs = String(photo || '').split(/[,\s]+/).filter((u) => /^https:\/\//.test(u));
-  const v = ml(vol, name, cat);
+  // В названиях селектива перед объёмом могут стоять номера ароматов и годы.
+  const namedVolume = cat === 'Селектив и ниша'
+    ? String(name).match(/(?:^|[^\d.,])(\d+(?:[.,]\d+)?)\s*(?:ml|мл)(?![a-zа-яё])/i)?.[1]
+    : undefined;
+  const v = ml(vol, Number(namedVolume) === 100 ? namedVolume : undefined, name, cat);
   const price = prices({usd:+usd,rate:+src.rate,category:cat,volume:v,name});
   items.push({
     id: String(id),
